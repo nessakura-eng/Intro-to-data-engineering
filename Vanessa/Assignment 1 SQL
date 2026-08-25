@@ -1,0 +1,61 @@
+-- =========================================================
+-- Grace Place HR Onboarding - Database Schema (6 tables)
+-- =========================================================
+
+CREATE TABLE DEPARTMENT (
+    dept_id     INT PRIMARY KEY AUTO_INCREMENT,
+    dept_name   VARCHAR(100) NOT NULL
+);
+
+-- Relationship: DEPARTMENT (1) --- (M) HR_MANAGER
+-- One department employs many managers
+CREATE TABLE HR_MANAGER (
+    manager_id  INT PRIMARY KEY AUTO_INCREMENT,
+    dept_id     INT NOT NULL,
+    name        VARCHAR(100) NOT NULL,
+    FOREIGN KEY (dept_id) REFERENCES DEPARTMENT(dept_id)
+);
+
+-- Relationship: DEPARTMENT (1) --- (M) NEW_HIRE
+-- One department is assigned to many new hires
+CREATE TABLE NEW_HIRE (
+    hire_id     INT PRIMARY KEY AUTO_INCREMENT,
+    dept_id     INT NOT NULL,
+    first_name  VARCHAR(50) NOT NULL,
+    last_name   VARCHAR(50) NOT NULL,
+    FOREIGN KEY (dept_id) REFERENCES DEPARTMENT(dept_id)
+);
+
+CREATE TABLE TASK (
+    task_id     INT PRIMARY KEY AUTO_INCREMENT,
+    task_name   VARCHAR(100) NOT NULL,
+    description VARCHAR(255)
+);
+
+-- Junction table resolving the M:N relationship between NEW_HIRE and TASK
+-- Relationship: NEW_HIRE (1) --- (M) TASK_ASSIGNMENT - one new hire receives many task assignments
+-- Relationship: TASK (1) --- (M) TASK_ASSIGNMENT - one task is used in many assignments
+-- Relationship: HR_MANAGER (1) --- (M) TASK_ASSIGNMENT - one manager assigns many task assignments
+CREATE TABLE TASK_ASSIGNMENT (
+    assignment_id  INT PRIMARY KEY AUTO_INCREMENT,
+    hire_id        INT NOT NULL,
+    task_id        INT NOT NULL,
+    assigned_by    INT NOT NULL,
+    date_assigned  DATE NOT NULL,
+    status         VARCHAR(20) DEFAULT 'pending',
+    FOREIGN KEY (hire_id) REFERENCES NEW_HIRE(hire_id),
+    FOREIGN KEY (task_id) REFERENCES TASK(task_id),
+    FOREIGN KEY (assigned_by) REFERENCES HR_MANAGER(manager_id)
+);
+
+-- Files/uploads tied to a specific task assignment (e.g. a signed form or ID scan)
+-- Relationship: TASK_ASSIGNMENT (1) --- (M) DOCUMENT
+-- One task assignment can have many uploaded documents
+CREATE TABLE DOCUMENT (
+    document_id    INT PRIMARY KEY AUTO_INCREMENT,
+    assignment_id  INT NOT NULL,
+    file_name      VARCHAR(150) NOT NULL,
+    file_url       VARCHAR(255) NOT NULL,
+    uploaded_date  DATE NOT NULL,
+    FOREIGN KEY (assignment_id) REFERENCES TASK_ASSIGNMENT(assignment_id)
+);
