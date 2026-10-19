@@ -1,9 +1,12 @@
-import React, { useReducer, useState, useMemo, useEffect, createContext, useContext } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback, createContext, useContext } from 'react'
 import logo from './logo.jpg'
 import {
-  NOW, DEMO_PASSWORD, CHECKPOINTS, CHECKPOINT_LABEL, STATUSES,
-  loadState, saveState, reducer, makeSelectors, defaultDue, fmtDate, fmtShort, fmtTime, fmtStamp, daysBetween,
-} from './db.js'
+  NOW, CHECKPOINTS, CHECKPOINT_LABEL, STATUSES,
+  makeSelectors, defaultDue, fmtDate, fmtShort, fmtTime, fmtStamp, daysBetween,
+} from './lib.js'
+import { supabase, isConfigured } from './supabase.js'
+import { TABLES, fetchTables, perform, TOUCHES, signInWithUsername, signOut as apiSignOut } from './api.js'
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from './demoAccounts.js'
 
 const Ctx = createContext(null)
 const useApp = () => useContext(Ctx)
@@ -62,36 +65,88 @@ function Ring({ pct, size = 112 }) {
 
 /* ---------- app shell ---------- */
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, null, loadState)
   const [toast, setToast] = useState(null)
-  useEffect(() => { saveState(state) }, [state])
+  const [session, setSession] = useState(undefined) // undefined = still checking
+  const [db, setDb] = useState(null)
+  const [loadError, setLoadError] = useState('')
+  const [route, setRoute] = useState({ page: 'home' })
+  const dbRef = useRef(null)
+  dbRef.current = db
+
   useEffect(() => {
     if (!toast) return undefined
-    const t = setTimeout(() => setToast(null), 5000)
+    const t = setTimeout(() => setToast(null), 6000)
     return () => clearTimeout(t)
   }, [toast])
-  const [userId, setUserId] = useState(null)
-  const [route, setRoute] = useState({ page: 'home' })
-  const S = useMemo(() => makeSelectors(state.db), [state.db])
 
+  // Supabase keeps the sign-in between visits; follow it.
+  useEffect(() => {
+    if (!isConfigured) return undefined
+    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
+    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next ?? null))
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  // Load every table the signed-in person is allowed to see (row-level security filters them).
+  const sessionUser = session?.user?.id
+  useEffect(() => {
+    if (!sessionUser) {
+      setDb(null)
+      return
+    }
+    let live = true
+    setLoadError('')
+    fetchTables(TABLES)
+      .then((all) => live && setDb(all))
+      .catch((e) => live && setLoadError(e.message))
+    return () => { live = false }
+  }, [sessionUser])
+
+  const dispatch = useCallback(async (action) => {
+    const current = dbRef.current
+    const me = current.Employee.find((e) => e.Email?.toLowerCase() === session.user.email.toLowerCase())
+    // Show a status change right away; the reload below confirms it.
+    if (action.type === 'status') {
+      setDb((prev) => ({
+        ...prev,
+        TaskAssignment: prev.TaskAssignment.map((r) =>
+          r.AssignmentID === action.id ? { ...r, Status: action.status, DateCompleted: action.status === 'Completed' ? NOW : null } : r),
+      }))
+    }
+    try {
+      await perform(action, { userId: me.EmployeeID, db: current })
+    } catch (e) {
+      setToast(e.message)
+    }
+    try {
+      const fresh = await fetchTables(TOUCHES[action.type] || TABLES)
+      setDb((prev) => ({ ...prev, ...fresh }))
+    } catch (e) {
+      setToast(e.message)
+    }
+  }, [session])
+
+  const S = useMemo(() => (db ? makeSelectors(db) : null), [db])
   const go = (page, params = {}) => {
     setRoute({ page, ...params })
     window.scrollTo(0, 0)
   }
-  const signIn = (id) => {
-    setUserId(id)
+  const signOut = async () => {
+    await apiSignOut()
     setRoute({ page: 'home' })
   }
-  const signOut = () => {
-    setUserId(null)
-  }
-  const ctx = { db: state.db, log: state.log, dispatch, S, userId, go, route, notify: setToast }
 
-  if (!userId) return (
-    <Ctx.Provider value={ctx}>
-      <Login onSignIn={signIn} />
-    </Ctx.Provider>
-  )
+  if (!isConfigured) return <SetupNeeded />
+  if (session === undefined) return <Splash text="Loading" />
+  if (!session) return <Login onSignedIn={() => setRoute({ page: 'home' })} />
+  if (loadError) return <Splash text={loadError} action={<button className="btn" onClick={signOut}>Sign out</button>} />
+  if (!db) return <Splash text="Loading your passport" />
+
+  const meRow = db.Employee.find((e) => e.Email?.toLowerCase() === session.user.email.toLowerCase())
+  if (!meRow)
+    return <Splash text="This login is not linked to an employee record. Ask an administrator to check the Employee email." action={<button className="btn" onClick={signOut}>Sign out</button>} />
+  const userId = meRow.EmployeeID
+  const ctx = { db, dispatch, S, userId, go, route, notify: setToast }
   const me = S.emp.get(userId)
   const isMgr = S.roleOf(userId) === 'Manager'
 
@@ -109,6 +164,30 @@ export default function App() {
       </div>
       {toast && <div className="toast" role="status">{toast}<button className="link" onClick={() => setToast(null)}>Dismiss</button></div>}
     </Ctx.Provider>
+  )
+}
+
+function Splash({ text, action }) {
+  return (
+    <div className="login-wrap">
+      <div className="strip"><b>Education changes everything.</b><span>Staff portal</span></div>
+      <div className="splash"><img className="logo-img" src={logo} alt="Grace Place for Children and Families" /><p>{text}</p>{action}</div>
+    </div>
+  )
+}
+
+function SetupNeeded() {
+  return (
+    <div className="login-wrap">
+      <div className="strip"><b>Education changes everything.</b><span>Staff portal</span></div>
+      <div className="splash setup">
+        <img className="logo-img" src={logo} alt="Grace Place for Children and Families" />
+        <h1>Connect Supabase</h1>
+        <p>This app reads its data from your Supabase project. Create a file named <code>.env.local</code> next to <code>package.json</code> with:</p>
+        <pre className="envbox">{'VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co\nVITE_SUPABASE_ANON_KEY=YOUR-ANON-PUBLIC-KEY'}</pre>
+        <p>Then restart <code>npm run dev</code>. The README lists every setup step.</p>
+      </div>
+    </div>
   )
 }
 
@@ -168,36 +247,31 @@ function Header({ me, isMgr, onSignOut }) {
   )
 }
 
-function ResetLink() {
-  const { dispatch } = useApp()
-  const [sure, setSure] = useState(false)
-  if (!sure) return <button type="button" className="link tiny left" onClick={() => setSure(true)}>Reset sample data</button>
-  return (
-    <span className="tiny">Erase all changes made in this browser?{' '}
-      <button type="button" className="link" onClick={() => { dispatch({ type: 'reset' }); setSure(false) }}>Yes, reset</button>{' '}
-      <button type="button" className="link" onClick={() => setSure(false)}>Cancel</button>
-    </span>
-  )
-}
-
 /* ---------- login ---------- */
-function Login({ onSignIn }) {
-  const { db, S } = useApp()
+function Login({ onSignedIn }) {
   const [user, setUser] = useState('')
   const [pw, setPw] = useState('')
   const [err, setErr] = useState('')
-  const submit = (e) => {
+  const [busy, setBusy] = useState(false)
+  const showDemo = import.meta.env.VITE_SHOW_DEMO_ACCOUNTS !== 'false'
+  const submit = async (e) => {
     e.preventDefault()
-    const acct = db.Account.find((a) => a.Username === user.trim().toLowerCase())
-    if (!acct || pw !== DEMO_PASSWORD) return setErr('Username or password is incorrect. Use one of the sample accounts on the right.')
-    onSignIn(acct.EmployeeID)
+    setBusy(true)
+    setErr('')
+    try {
+      await signInWithUsername(user, pw)
+      onSignedIn()
+    } catch (ex) {
+      setErr(ex.message)
+    }
+    setBusy(false)
   }
   const pick = (a) => {
-    setUser(a.Username)
+    setUser(a.username)
     setPw(DEMO_PASSWORD)
     setErr('')
   }
-  const group = (type) => db.Account.filter((a) => a.AccountType === type)
+  const group = (type) => DEMO_ACCOUNTS.filter((a) => a.role === type)
   return (
     <div className="login-wrap">
     <div className="strip"><b>Education changes everything.</b><span>Staff portal</span></div>
@@ -212,33 +286,31 @@ function Login({ onSignIn }) {
           <label htmlFor="pw">Password</label>
           <input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" />
           {err && <p className="error" role="alert">{err}</p>}
-          <button className="btn primary wide" type="submit">Sign in</button>
+          <button className="btn primary wide" type="submit" disabled={busy}>{busy ? 'Signing in' : 'Sign in'}</button>
         </form>
-        <ResetLink />
-        <p className="tiny muted">Sample data from Team-3-Data.sql. Every account uses the password <code>{DEMO_PASSWORD}</code>. Passwords are stored as bcrypt hashes in the Account table.</p>
+        {showDemo && <p className="tiny muted">Sample accounts from Team-3-Data.sql all use the password <code>{DEMO_PASSWORD}</code>.</p>}
       </section>
+      {showDemo && (
       <section className="login-side" aria-label="Sample accounts">
         <h2>Sample accounts</h2>
         {['Manager', 'New Hire'].map((type) => (
           <div key={type} className="acct-group">
             <h3>{type === 'Manager' ? 'Managers' : 'New hires'}</h3>
             <ul>
-              {group(type).map((a) => {
-                const e = S.emp.get(a.EmployeeID)
-                return (
-                  <li key={a.AccountID}>
-                    <button onClick={() => pick(a)} className="acct">
-                      <Avatar emp={e} size={34} />
-                      <span><b>{e.Name}</b><small>{e.RoleTitle}, {S.dept.get(e.DepartmentID).DepartmentName}</small></span>
-                      <code>{a.Username}</code>
-                    </button>
-                  </li>
-                )
-              })}
+              {group(type).map((a, i) => (
+                <li key={a.username}>
+                  <button onClick={() => pick(a)} className="acct">
+                    <span className={'avatar av' + (i % 4)} style={{ width: 34, height: 34, fontSize: 13 }}>{a.name.split(' ').map((p) => p[0]).join('')}</span>
+                    <span><b>{a.name}</b><small>{a.title}, {a.dept}</small></span>
+                    <code>{a.username}</code>
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
       </section>
+      )}
     </div>
     </div>
   )

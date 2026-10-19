@@ -354,3 +354,7 @@ button.person:hover { background: var(--surface-2); }
 .status-ro small { font-size: 0.72rem; }
 .btn.start { min-width: 120px; justify-content: center; }
 @media (max-width: 820px) { .status-ro { align-items: flex-start; } }
+
+.splash { max-width: 520px; margin: 12vh auto; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.splash .logo-img { height: 84px; padding: 0; }
+.envbox { background: var(--code-bg); color: var(--code-ink); font-family: var(--mono); font-size: 0.82rem; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 0; width: 100%; }
