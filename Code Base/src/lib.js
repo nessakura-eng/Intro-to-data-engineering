@@ -1,5 +1,9 @@
-// "Today" for the sample data. Due dates in Team-3-Data.sql are relative to this day.
-export const NOW = import.meta.env.VITE_DEMO_TODAY || '2026-10-19'
+const localToday = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+export const NOW = import.meta.env.VITE_DEMO_TODAY || localToday()
 export const CHECKPOINTS = ['Pre-Orientation', 'First Week', '30-Day', '60-Day', '90-Day', 'Next Steps']
 export const CHECKPOINT_LABEL = {
   'Pre-Orientation': 'Pre-Orientation',
