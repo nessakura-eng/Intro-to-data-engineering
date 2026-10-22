@@ -1,6 +1,5 @@
 -- ============================================================
--- Team 3 -- Grace Place Onboarding Passport
--- Supabase security setup. Run AFTER Team-3-DDL.sql and Team-3-Data.sql,
+-- Supabase security setup. Run AFTER Grace-Place-DDL.sql and Grace-Place-Data.sql,
 -- in the Supabase SQL Editor.
 --
 -- Supabase Auth checks the password at sign-in. These rules decide what
