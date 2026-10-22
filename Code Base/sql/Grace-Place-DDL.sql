@@ -6,7 +6,7 @@
 -- ============================================================
 
 -- Drop in child-to-parent order so the script can be re-run. CASCADE also removes
--- the security policies from Team-3-Supabase-Security.sql, which must be run again afterwards.
+-- the security policies from Grace-Place-Supabase-Security.sql, which must be run again afterwards.
 DROP TABLE IF EXISTS TaskComment CASCADE;
 DROP TABLE IF EXISTS Attachment CASCADE;
 DROP TABLE IF EXISTS TaskAssignment CASCADE;
