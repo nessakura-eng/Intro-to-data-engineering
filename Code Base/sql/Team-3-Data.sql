@@ -1,7 +1,6 @@
 -- ============================================================
--- Team 3 (The Illuminati) -- COP 3710
 -- Grace Place Onboarding Passport Database -- sample data (PostgreSQL)
--- Run Team-3-DDL.sql first, then this file.
+-- Run Grace-Place-DDL.sql first, then this file.
 --
 -- All people, usernames, emails, committees and department-specific
 -- tasks are fictional sample data.
