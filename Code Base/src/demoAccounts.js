@@ -1,4 +1,4 @@
-// Sample sign-in shortcuts for the class demo (the people in Team-3-Data.sql).
+// Sample sign-in shortcuts for the class demo (the people in Grace-Place-Data.sql).
 // Hide them with VITE_SHOW_DEMO_ACCOUNTS=false.
 export const DEMO_PASSWORD = 'Passport2026!'
 export const DEMO_ACCOUNTS = [
