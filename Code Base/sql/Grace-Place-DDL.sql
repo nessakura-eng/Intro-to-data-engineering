@@ -1,6 +1,6 @@
 -- ============================================================
 -- Grace Place Onboarding Passport Database -- table creation (PostgreSQL)
--- Run this file first, then Team-3-Data.sql.
+-- Run this file first, then Grace-Place-Data.sql.
 -- Every foreign key references exactly one table. Allowed values for
 -- the status-style columns are enforced by the application.
 -- ============================================================
