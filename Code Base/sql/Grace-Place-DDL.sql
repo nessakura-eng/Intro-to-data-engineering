@@ -1,5 +1,4 @@
 -- ============================================================
--- Team 3 (The Illuminati) -- COP 3710
 -- Grace Place Onboarding Passport Database -- table creation (PostgreSQL)
 -- Run this file first, then Team-3-Data.sql.
 -- Every foreign key references exactly one table. Allowed values for
