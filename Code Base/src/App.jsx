@@ -288,7 +288,7 @@ function Login({ onSignedIn }) {
           {err && <p className="error" role="alert">{err}</p>}
           <button className="btn primary wide" type="submit" disabled={busy}>{busy ? 'Signing in' : 'Sign in'}</button>
         </form>
-        {showDemo && <p className="tiny muted">Sample accounts from Team-3-Data.sql all use the password <code>{DEMO_PASSWORD}</code>.</p>}
+        {showDemo && <p className="tiny muted">Sample accounts from Grace-Place-Data.sql all use the password <code>{DEMO_PASSWORD}</code>.</p>}
       </section>
       {showDemo && (
       <section className="login-side" aria-label="Sample accounts">
