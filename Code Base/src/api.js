@@ -44,9 +44,19 @@ export async function fetchTables(tables) {
 export async function signInWithUsername(username, password) {
   // Supabase Auth signs in with email, so look up the email for this username first.
   const { data: email, error } = await supabase.rpc('login_email', { p_username: username.trim() })
-  if (error || !email) throw new Error('Username or password is incorrect.')
+  if (error) {
+    throw new Error(
+      'Could not look up that username (' + error.message + '). Run sql/Grace-Place-Supabase-Security.sql in the Supabase SQL Editor and check the key in .env.local.',
+    )
+  }
+  if (!email) throw new Error('No account has that username.')
   const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-  if (authError) throw new Error('Username or password is incorrect.')
+  if (authError) {
+    if (/invalid login credentials/i.test(authError.message)) {
+      throw new Error('Wrong password, or this login has not been created in Supabase yet. Run npm run seed:auth (or add the users under Authentication > Users).')
+    }
+    throw new Error(authError.message)
+  }
 }
 export const signOut = () => supabase.auth.signOut()
 
