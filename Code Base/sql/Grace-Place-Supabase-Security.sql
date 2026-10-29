@@ -1,4 +1,5 @@
 -- ============================================================
+-- Grace Place Onboarding Passport
 -- Supabase security setup. Run AFTER Grace-Place-DDL.sql and Grace-Place-Data.sql,
 -- in the Supabase SQL Editor.
 --
@@ -6,6 +7,9 @@
 -- each signed-in person may read or change. The signed-in person is matched
 -- to an Employee row by email.
 --   * Managers: read everything, create/assign/delete tasks, mark complete.
+--   * HR (Account.IsHR = TRUE) are managers who may also add new hires, through the
+--     add-new-hire Edge Function (supabase/functions/add-new-hire). The browser itself
+--     can never insert into Employee or Account.
 --   * New hires: read only their own passport tasks, comment, add proof,
 --     and press "Get Started" (Not started -> In progress). Nothing else.
 -- ============================================================
@@ -54,7 +58,7 @@ REVOKE ALL ON Department, Employee, Account, Task, TaskAssignment, Attachment, T
 
 GRANT SELECT ON Department, Employee, Committee, EmployeeCommittee TO authenticated;
 -- PasswordHash is never sent to the browser.
-GRANT SELECT (AccountID, EmployeeID, Username, AccountType) ON Account TO authenticated;
+GRANT SELECT (AccountID, EmployeeID, Username, AccountType, IsHR) ON Account TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON Task, TaskAssignment, Attachment, TaskComment, MeetAndGreet TO authenticated;
 
 -- ---------- row-level security ----------
