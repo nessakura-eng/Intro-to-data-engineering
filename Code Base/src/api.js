@@ -74,6 +74,7 @@ export const TOUCHES = {
   deleteTask: ['Task', 'TaskAssignment', 'Attachment', 'TaskComment'],
   meet: ['MeetAndGreet'],
   addHire: ['Employee', 'Account'],
+  deleteEmployee: ['Employee', 'Account', 'TaskAssignment', 'Attachment', 'TaskComment', 'MeetAndGreet', 'EmployeeCommittee'],
 }
 
 const asgRow = (employeeId, taskId, byId, due) => ({
@@ -198,6 +199,16 @@ export async function perform(a, ctx) {
         let msg = error.message
         try { msg = (await error.context.json()).error || msg } catch { /* keep the generic message */ }
         if (/failed to send|not found|404/i.test(msg)) msg = 'The add-new-hire function is not set up in Supabase yet. See the handoff guide.'
+        throw new Error(msg)
+      }
+      return undefined
+    }
+    case 'deleteEmployee': {
+      const { error } = await supabase.functions.invoke('delete-employee', { body: { employeeId: a.id } })
+      if (error) {
+        let msg = error.message
+        try { msg = (await error.context.json()).error || msg } catch { /* keep the generic message */ }
+        if (/failed to send|not found|404/i.test(msg)) msg = 'The delete-employee function is not set up in Supabase yet. See the handoff guide.'
         throw new Error(msg)
       }
       return undefined
