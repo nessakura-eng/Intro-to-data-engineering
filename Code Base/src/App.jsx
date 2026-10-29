@@ -1028,7 +1028,7 @@ function AddTask({ hire, me, defaultBy, onDone }) {
 }
 
 function Directory() {
-  const { db, S, go, isHR } = useApp()
+  const { db, S, go, isHR, userId } = useApp()
   const [term, setTerm] = useState('')
   const [adding, setAdding] = useState(false)
   const match = (e) => !term.trim() || e.Name.toLowerCase().includes(term.trim().toLowerCase()) || e.RoleTitle.toLowerCase().includes(term.trim().toLowerCase())
@@ -1054,11 +1054,13 @@ function Directory() {
                 {mg.map((e) => (
                   <li key={e.EmployeeID}>
                     <div className="person static"><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle} · {e.Email}</small></span><span className="chip role">Manager</span></div>
+                    {isHR && e.EmployeeID !== userId && <DeleteHireButton emp={e} />}
                   </li>
                 ))}
                 {st.map((e) => (
                   <li key={e.EmployeeID}>
                     <div className="person static"><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle}{e.Email ? ' · ' + e.Email : ''}</small></span><span className="chip role">Staff</span></div>
+                    {isHR && e.EmployeeID !== userId && <DeleteHireButton emp={e} />}
                   </li>
                 ))}
                 {nh.map((e) => {
@@ -1069,6 +1071,7 @@ function Directory() {
                         <Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle} · Hired {fmtShort(e.HireDate)}</small></span>
                         <span className="mini"><Bar pct={p.pct} label={e.Name + ' progress'} /><small>{p.pct}%</small></span>
                       </button>
+                      {isHR && e.EmployeeID !== userId && <DeleteHireButton emp={e} />}
                     </li>
                   )
                 })}
@@ -1078,6 +1081,26 @@ function Directory() {
         })}
       </div>
     </>
+  )
+}
+
+function DeleteHireButton({ emp }) {
+  const { dispatch, notify } = useApp()
+  const [busy, setBusy] = useState(false)
+  const remove = async () => {
+    const ok = window.confirm(
+      'Delete ' + emp.Name + ' from the portal?\n\nThis removes their login, account, assigned tasks, proof uploads, comments, meet and greets and committee memberships. This cannot be undone.',
+    )
+    if (!ok) return
+    setBusy(true)
+    const done = await dispatch({ type: 'deleteEmployee', id: emp.EmployeeID })
+    setBusy(false)
+    if (done) notify(emp.Name + ' was deleted.')
+  }
+  return (
+    <button className="btn ghost" onClick={remove} disabled={busy} aria-label={'Delete ' + emp.Name} title={'Delete ' + emp.Name}>
+      <Icon n="x" />
+    </button>
   )
 }
 
