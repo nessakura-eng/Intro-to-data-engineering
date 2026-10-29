@@ -2,44 +2,93 @@
 -- Grace Place Onboarding Passport Database -- sample data (PostgreSQL)
 -- Run Grace-Place-DDL.sql first, then this file.
 --
--- All people, usernames, emails, committees and department-specific
--- tasks are fictional sample data.
+-- Employees 1-14 are fictional sample people (6 managers, 8 new hires) with
+-- sample progress, committees, comments and meet and greets, so the app can be
+-- demoed. Employees 15-54 are the 40 real staff listed at
+-- graceplacenaples.org/staff, with title, department and work email; each also
+-- has an account: Manager for people whose title is a manager, director or chief, and
+-- New Hire for the six staff in non-management roles (Robyn Harvey, Tom Powers,
+-- Rosie Schulz, Paola Alfaro, Ivette Hernandez, Glendy Gomez). Change AccountType
+-- in the Account table if a role needs different access. Delete the sample rows
+-- when going live.
 --   * Standardized tasks use the task names on Grace Place's New Hire
 --     Orientation Checklist (PDF) and Passport Checklist (xlsx).
---   * Career & Technical Education tasks come from Grace Place's
---     sample Passport.
+--   * Career and Technical Education sits within School Age Programs; its
+--     tasks (School Age Programs, Curriculum Specialist) come from Grace
+--     Place's sample Passport.
 --   * Other departments' tasks are placeholders until their managers
 --     confirm their own lists.
--- Every demo account uses the password  Passport2026!  (stored below
--- as a bcrypt hash). Manager accounts: dana.whitfield, marcus.ellison,
--- priya.raman, tom.alvarez, lena.okafor, jordan.pierce. Everyone else
--- is a New Hire account.
+-- Every account (sample and real) uses the password  Passport2026!  (stored below
+-- as a bcrypt hash). Sample manager accounts: dana.whitfield, marcus.ellison,
+-- priya.raman, tom.alvarez, lena.okafor, jordan.pierce. The other sample
+-- accounts are New Hire accounts; 34 of the 40 real staff accounts are Managers.
 -- 'Today' for the sample data is 2026-10-19.
 -- ============================================================
 
 INSERT INTO Department (DepartmentID, DepartmentName, GracePlaceTerm) VALUES
-    (1, 'Career and Technical Education', NULL),
+    (1, 'Executive Team', NULL),
     (2, 'Development & Volunteers', NULL),
     (3, 'Finance & Admin', NULL),
     (4, 'Facilities', NULL),
-    (5, 'Family Literacy & Adult Education', NULL),
-    (6, 'School Age Programs', NULL);
+    (5, 'Family Literacy', NULL),
+    (6, 'School Age Programs', NULL),
+    (7, 'Human Resources', NULL);
 
 INSERT INTO Employee (EmployeeID, Name, DepartmentID, RoleTitle, EmploymentType, HireDate, OrientationCompleteDate, Email) VALUES
-    (1, 'Dana Whitfield', 1, 'Program Manager', 'Full-time', '2021-03-01', '2021-03-05', 'dana.whitfield@example.org'),
+    (1, 'Dana Whitfield', 6, 'Program Manager', 'Full-time', '2021-03-01', '2021-03-05', 'dana.whitfield@example.org'),
     (2, 'Marcus Ellison', 2, 'Director of Development', 'Full-time', '2019-06-10', '2019-06-14', 'marcus.ellison@example.org'),
     (3, 'Priya Raman', 3, 'Finance & Admin Manager', 'Full-time', '2020-01-13', '2020-01-17', 'priya.raman@example.org'),
     (4, 'Tom Alvarez', 4, 'Facilities Manager', 'Full-time', '2018-08-20', '2018-08-24', 'tom.alvarez@example.org'),
     (5, 'Lena Okafor', 5, 'Adult Education Director', 'Full-time', '2020-09-14', '2020-09-18', 'lena.okafor@example.org'),
     (6, 'Jordan Pierce', 6, 'School Age Programs Director', 'Full-time', '2019-08-05', '2019-08-09', 'jordan.pierce@example.org'),
-    (7, 'Avery Nguyen', 1, 'Curriculum Specialist', 'Full-time', '2026-09-08', '2026-09-11', 'avery.nguyen@example.org'),
+    (7, 'Avery Nguyen', 6, 'Curriculum Specialist', 'Full-time', '2026-09-08', '2026-09-11', 'avery.nguyen@example.org'),
     (8, 'Sam Delgado', 2, 'Volunteer Coordinator', 'Part-time', '2026-09-21', '2026-09-25', 'sam.delgado@example.org'),
     (9, 'Riley Chen', 3, 'Accounting Assistant', 'Full-time', '2026-10-05', '2026-10-09', 'riley.chen@example.org'),
     (10, 'Casey Morgan', 4, 'Maintenance Technician', 'Full-time', '2026-08-17', '2026-08-21', 'casey.morgan@example.org'),
     (11, 'Taylor Brooks', 5, 'Adult Education Instructor', 'Part-time', '2026-08-24', '2026-08-28', 'taylor.brooks@example.org'),
     (12, 'Kai Patterson', 6, 'Classroom Teacher', 'Full-time', '2026-09-14', '2026-09-18', 'kai.patterson@example.org'),
     (13, 'Jamie Foster', 6, 'After-School Assistant', 'Part-time', '2026-10-12', NULL, 'jamie.foster@example.org'),
-    (14, 'Noor Haddad', 2, 'Development Associate', 'Full-time', '2026-10-12', NULL, 'noor.haddad@example.org');
+    (14, 'Noor Haddad', 2, 'Development Associate', 'Full-time', '2026-10-12', NULL, 'noor.haddad@example.org'),
+    (15, 'Lära Fisher', 1, 'Chief Executive Officer', NULL, NULL, NULL, 'lara.fisher@graceplacenaples.org'),
+    (16, 'Stacey Vaughn', 1, 'Chief Development Officer', NULL, NULL, NULL, 'stacey.vaughn@graceplacenaples.org'),
+    (17, 'William Beesley', 1, 'Chief Human Resources Officer', NULL, NULL, NULL, 'william.beesley@graceplacenaples.org'),
+    (18, 'Laurie R. Weisberg, MBA', 1, 'Chief Financial Officer', NULL, NULL, NULL, 'laurie.weisberg@graceplacenaples.org'),
+    (19, 'Marcie Curry, Ed.D.', 1, 'Chief Program Officer', NULL, NULL, NULL, 'marcie.curry@graceplacenaples.org'),
+    (20, 'Diane Ponton, M.S.Ed.', 1, 'Chief Learning Officer', NULL, NULL, NULL, 'diane@graceplacenaples.org'),
+    (21, 'Robyn Harvey', 1, 'Executive Administrative Assistant', NULL, NULL, NULL, 'robyn.harvey@graceplacenaples.org'),
+    (22, 'Rachel Garcia Puente', 7, 'Human Resources Assistant Manager', NULL, NULL, NULL, 'rachel.garcia@graceplacenaples.org'),
+    (23, 'David Banuelos', 3, 'Director, Data and IT', NULL, NULL, NULL, 'david.banuelos@graceplacenaples.org'),
+    (24, 'Tom Powers', 3, 'Grants Specialist', NULL, NULL, NULL, 'tom@graceplacenaples.org'),
+    (25, 'Marcus Avery', 3, 'Accounting Manager', NULL, NULL, NULL, 'marcus.avery@graceplacenaples.org'),
+    (26, 'Matthews Therot', 3, 'Assistant Data Manager', NULL, NULL, NULL, 'matthews.therot@graceplacenaples.org'),
+    (27, 'Rosie Schulz', 3, 'Data Coordinator', NULL, NULL, NULL, 'lauren.schulz@graceplacenaples.org'),
+    (28, 'Stephanie Brooke', 2, 'Director, Strategy and Communications', NULL, NULL, NULL, 'stephanie.brooke@graceplacenaples.org'),
+    (29, 'Colleen Durham', 2, 'Director of Donor Engagement', NULL, NULL, NULL, 'colleen.durham@graceplacenaples.org'),
+    (30, 'Melisa Mast', 2, 'Director of Philanthropy', NULL, NULL, NULL, 'melisa.mast@graceplacenaples.org'),
+    (31, 'Avery Curry-Williams', 2, 'Grants Manager', NULL, NULL, NULL, 'avery.williams@graceplacenaples.org'),
+    (32, 'Kailyn Potter', 2, 'Volunteer & Internal Events Manager', NULL, NULL, NULL, 'kailyn.potter@graceplacenaples.org'),
+    (33, 'Kristen Geary', 2, 'Marketing & Events Manager', NULL, NULL, NULL, 'kristen.geary@graceplacenaples.org'),
+    (34, 'Kengo Yamada', 6, 'Director of Career and Technical Education', NULL, NULL, NULL, 'kengo.yamada@graceplacenaples.org'),
+    (35, 'Ximena Candelario', 6, 'School Age Programs Manager', NULL, NULL, NULL, 'ximena.candelario@graceplacenaples.org'),
+    (36, 'Crystal Hidalgo', 6, 'Elementary School Manager', NULL, NULL, NULL, 'crystal.hidalgo@graceplacenaples.org'),
+    (37, 'Erandeni Romero', 6, 'Elementary School Assistant Manager', NULL, NULL, NULL, 'erandeni.romero@graceplacenaples.org'),
+    (38, 'Samantha Pascual', 6, 'Middle School Program Manager', NULL, NULL, NULL, 'samantha.pascual@graceplacenaples.org'),
+    (39, 'Ivan M. De Armas', 6, 'Middle School Assistant Manager', NULL, NULL, NULL, 'ivan.dearmas@graceplacenaples.org'),
+    (40, 'Catera Ismé', 6, 'High School Program Manager', NULL, NULL, NULL, 'catera.isme@graceplacenaples.org'),
+    (41, 'Melissa Martinez', 6, 'High School Assistant Manager', NULL, NULL, NULL, 'melissa.martinez@graceplacenaples.org'),
+    (42, 'Alex Amador', 6, 'College and Career Access Manager', NULL, NULL, NULL, 'alex@graceplacenaples.org'),
+    (43, 'Maria Olson', 6, 'Family Engagement Manager', NULL, NULL, NULL, 'maria.olson@graceplacenaples.org'),
+    (44, 'Paola Alfaro', 6, 'Food Service Associate', NULL, NULL, NULL, 'paola.alfaro@graceplacenaples.org'),
+    (45, 'Michelle Fonte', 5, 'Director of Family Literacy Expansion', NULL, NULL, NULL, 'michelle.fonte@graceplacenaples.org'),
+    (46, 'Maria Scholtz', 5, 'Director, Early Learning Center at Naples Park Elementary', NULL, NULL, NULL, 'maria.scholtz@graceplacenaples.org'),
+    (47, 'Cynthia Vega', 5, 'Director of Early Childhood Education', NULL, NULL, NULL, 'cynthia.vega@graceplacenaples.org'),
+    (48, 'Marianella Valdettaro', 5, 'Bright Beginnings Parent Time Manager', NULL, NULL, NULL, 'marianella.valdettaro@graceplacenaples.org'),
+    (49, 'Erika Galvan', 5, 'Bright Beginnings Assistant Manager', NULL, NULL, NULL, 'erika.galvan@graceplacenaples.org'),
+    (50, 'Wendy Sanchez', 5, 'Bright Beginnings Assistant Manager, Expansion', NULL, NULL, NULL, 'wendy.sanchez@graceplacenaples.org'),
+    (51, 'Ivette Hernandez', 5, 'Adult Education Coordinator', NULL, NULL, NULL, 'ivette@graceplacenaples.org'),
+    (52, 'Glendy Gomez', 5, 'Welcome Center Receptionist', NULL, NULL, NULL, 'glendy.gomez@graceplacenaples.org'),
+    (53, 'David Rojas', 4, 'Facilities and Operations Manager', NULL, NULL, NULL, 'david.rojas@graceplacenaples.org'),
+    (54, 'Dave Jepsen', 4, 'IT Manager', NULL, NULL, NULL, 'david.jepsen@graceplacenaples.org');
 
 INSERT INTO Account (AccountID, EmployeeID, Username, PasswordHash, AccountType) VALUES
     (1, 1, 'dana.whitfield', '$2a$10$jnrAehoPx23qZ4o9yDlYyO6IM1RYo1O7F..sHfkCtgOqX45MYvxgC', 'Manager'),
@@ -55,7 +104,51 @@ INSERT INTO Account (AccountID, EmployeeID, Username, PasswordHash, AccountType)
     (11, 11, 'taylor.brooks', '$2a$10$nbf5epktALyChM78MCY7yuoW1a0zVE7truMWJQ3Yu9m.HXh2gdb9m', 'New Hire'),
     (12, 12, 'kai.patterson', '$2a$10$rPvdDisQrO3x3u9l1/UpWuyvCOkdq0xEkZ11G89X3/RqhGMQlydN6', 'New Hire'),
     (13, 13, 'jamie.foster', '$2a$10$J2/vDvYSh1pZ81ytNg/4F.PcD5Q4qu.zPv7unbdFVy9mY0.uD/wJW', 'New Hire'),
-    (14, 14, 'noor.haddad', '$2a$10$.jr/s7CdmXXHAqBf2VtV3OzyaPgiu9wWnl49m.R.AkvEkkJQD4DKq', 'New Hire');
+    (14, 14, 'noor.haddad', '$2a$10$.jr/s7CdmXXHAqBf2VtV3OzyaPgiu9wWnl49m.R.AkvEkkJQD4DKq', 'New Hire'),
+    (15, 15, 'lara.fisher', '$2a$10$jGoCdN2xA09F1hvUS78E/ucDaFqjKt0yunw0pvkM29Sl7xHb0bniu', 'Manager'),
+    (16, 16, 'stacey.vaughn', '$2a$10$pmwvTnVsk6nVlCu86ogWXe7y6l6RoUZQaaPPl5Vg1JLgkXfdOgQTO', 'Manager'),
+    (17, 17, 'william.beesley', '$2a$10$zFqnSGtA954ly2Z2ryYBVO8yudVmmvcPz80DRrUpMZ.JB9xZ8ifiO', 'Manager'),
+    (18, 18, 'laurie.weisberg', '$2a$10$7Cs.hLk6wGKIicVq/zV1FOWDWKoB2rY.T18qk6xpnBSfoCzUCErEK', 'Manager'),
+    (19, 19, 'marcie.curry', '$2a$10$nIcIZDPkaWY7tk71kx30bOUf.nw5AjTNqTnEajPTe5I5A/QaUnvYq', 'Manager'),
+    (20, 20, 'diane', '$2a$10$kL8Wl0jhS3CxZ3UElNqvKOPwQXfJVySJmH3mUwgMd1Ea3LmcNAMgi', 'Manager'),
+    (21, 21, 'robyn.harvey', '$2a$10$Xo6x8WoQkw/8QzLvGXXYVuHxofv.qVtB8o.8FgAxHEGQIbLXY8WYG', 'New Hire'),
+    (22, 22, 'rachel.garcia', '$2a$10$.WBJrtJk5UjVjwBa9zMgEuKWeLXaj3Ss9i0Art4NsCla3o0ERH0Y.', 'Manager'),
+    (23, 23, 'david.banuelos', '$2a$10$ihsm49.sUs9VsCCIdHBrhOLNmsF64AUS3UlhM1FrPU2.bIOrls646', 'Manager'),
+    (24, 24, 'tom', '$2a$10$W5f.x.m59aJuqTJgcJjfUuvPoSIbNpVkWS50h29pYoGeImeFsIQnW', 'New Hire'),
+    (25, 25, 'marcus.avery', '$2a$10$Hx7zT0df/Bkg4GcMJhnyJuEO1fkjTc.x34maTyfhuvaxYU4kNbv4K', 'Manager'),
+    (26, 26, 'matthews.therot', '$2a$10$R12yCl8MDlzSDfNC5NXKmOGm9kdrDUGMl6ZpE1b6KdvimowrXm0ES', 'Manager'),
+    (27, 27, 'lauren.schulz', '$2a$10$J7101nh0fJ1cdd/t5K0c.uawHmUW1vLFzxmU70Q.WzJd9PNhSOXte', 'New Hire'),
+    (28, 28, 'stephanie.brooke', '$2a$10$A3QGTYTuj5u8wVppYB1pJOvpvLtNabJLbQ0U/8qe3wRuy5X/85yhG', 'Manager'),
+    (29, 29, 'colleen.durham', '$2a$10$QHGGBIJYLFgLp40KliOfduA4yf8VSWzJ529ygEntW5mKFwOl1pwDG', 'Manager'),
+    (30, 30, 'melisa.mast', '$2a$10$hhAso9zqt43gSM.tips/qeq4C.0b0xhVTMDwXTMolgS10yxVDVOMS', 'Manager'),
+    (31, 31, 'avery.williams', '$2a$10$y353JctNmYSdA8ECVcsue.0e/8MSPWRhSDYEMCdcOnCXLnFASsVLO', 'Manager'),
+    (32, 32, 'kailyn.potter', '$2a$10$8XCkfp5ZuOp7oc2J3JZCUuFkZywDPxDaGm0PUQIA11RNhCUIIgc/i', 'Manager'),
+    (33, 33, 'kristen.geary', '$2a$10$/Rm5DhWLZe1fwcbYcHQRS.7L7Nj7o9bq0oISiMdgTrxuxxIzUapwK', 'Manager'),
+    (34, 34, 'kengo.yamada', '$2a$10$sxKebFnlEpXjSRAtWhTQ4eLyKuT/BkJ/yqSeI64rszARghWYzLIMy', 'Manager'),
+    (35, 35, 'ximena.candelario', '$2a$10$Diu/eZg2LcEh9aG4txCo/ePA1G5p5RLEArvnxaqazShS4P4OVuSn2', 'Manager'),
+    (36, 36, 'crystal.hidalgo', '$2a$10$dUvh2g/Y5Vpf8HwcHtbW2uxNIDOO4Zdl0iDo5j2/LqhO25W1ARi0a', 'Manager'),
+    (37, 37, 'erandeni.romero', '$2a$10$hxDe8JN/STr34JVQGSKcWOW4S2944fmIMpNNDN3NhyOTE4B2W.rpy', 'Manager'),
+    (38, 38, 'samantha.pascual', '$2a$10$T/HYQXh/fPtKIKhS5A0Lse9ga/EoM80B8fnTgjcvJum5E51jfhrkm', 'Manager'),
+    (39, 39, 'ivan.dearmas', '$2a$10$Kt1jzrr0sdMl9Z0MeLj8Eev/gkI1l2tBMxo9elQ.Uti7glDp/tuC6', 'Manager'),
+    (40, 40, 'catera.isme', '$2a$10$vL0kvYOSCdO1vR33EgLhpOE0WPv.HHp2IBm7rN0RCy00IQqKCLLFi', 'Manager'),
+    (41, 41, 'melissa.martinez', '$2a$10$sBAzVwcVkRwEUR/.aMPKP.hJe3G0AoNcNfOxwYAqJp69dfVBGNpky', 'Manager'),
+    (42, 42, 'alex', '$2a$10$IFBxTeC7MC4I5fcP.gCV0uazoACCpJjhufA1pPNTUBoBOKn3/kEGa', 'Manager'),
+    (43, 43, 'maria.olson', '$2a$10$m2eee2kFau/P7dVznywjNOJIQ6MHvAyPmsKVYBkcaLJKzSWoaREKC', 'Manager'),
+    (44, 44, 'paola.alfaro', '$2a$10$NcPVq2ri/5hx0UVZZGsJ2.JSC6NVZADA9vx4IRCErlQoO3QoQ6pmK', 'New Hire'),
+    (45, 45, 'michelle.fonte', '$2a$10$GQBk6ZaycvkxjGoLVdldj.lwdcuXVvIMWrKuVR5vtC6NCZgG1uKyW', 'Manager'),
+    (46, 46, 'maria.scholtz', '$2a$10$YMioNwanqS8nO1uLC2ApLOBo4qlILXzQkePT00pk.ycUSZvGCILo2', 'Manager'),
+    (47, 47, 'cynthia.vega', '$2a$10$2ZxbXXRYplL97XxemBlrJOBcRYESHHXNgVrp1azPQMhVMcl.ZgGNS', 'Manager'),
+    (48, 48, 'marianella.valdettaro', '$2a$10$Y8XNkuBtMSWDXCyRX27q5uaTKa8kpU8tbnRwmr35OrlRv5yoaWnOi', 'Manager'),
+    (49, 49, 'erika.galvan', '$2a$10$hSPkWsj5XjzGZ5/ultorDOJDFgEtAKu8h8EF8kG.h2dQ1Vn8luNGi', 'Manager'),
+    (50, 50, 'wendy.sanchez', '$2a$10$ZWNF5X/fR/bx5hPIeJCGuOtJqSl/35KDuPg/ubBGT2GLTOxgEq9Ci', 'Manager'),
+    (51, 51, 'ivette', '$2a$10$VRc.6MKWMs7Tc2DJCM68zObPX14hLcb0eluYgX69YKWxJV/8PWEXC', 'New Hire'),
+    (52, 52, 'glendy.gomez', '$2a$10$q1pFy8XswN13Qm73J64ZB.kDZveIuxBAD1cs80qJUuaZUuqtBfqDy', 'New Hire'),
+    (53, 53, 'david.rojas', '$2a$10$b.AcqjLFzf1g7r6hoc1gKueFZVOBDcHpPeGFqfr33Tgi32CJzPnlG', 'Manager'),
+    (54, 54, 'david.jepsen', '$2a$10$.Mxn0hqQYGtMcsm3FPJXEOXJPOKRbGsGUsEzRZ4sG1Nogr2IIajjG', 'Manager');
+
+-- HR staff may add new hires to the portal (Add new hire button in the Directory).
+-- To give someone this ability, set IsHR to TRUE on their Account row.
+UPDATE Account SET IsHR = TRUE WHERE Username IN ('william.beesley', 'rachel.garcia');
 
 INSERT INTO Task (TaskID, TaskName, Description, AudienceType, TaskCategory, DepartmentID, RoleTitle, Checkpoint, PerformedBy, SourceDocument) VALUES
     (1, 'Issue Grace Place shirt', 'Hand the new hire their Grace Place shirt.', 'Management', 'Standardized', NULL, NULL, 'First Week', 'Management', 'Orientation Checklist (PDF)'),
@@ -76,15 +169,15 @@ INSERT INTO Task (TaskID, TaskName, Description, AudienceType, TaskCategory, Dep
     (16, 'Meet & greet - Development & Volunteers', 'Meet the Development & Volunteers team.', 'New Hire', 'Standardized', NULL, NULL, '30-Day', 'New Hire', 'Passport Checklist (xlsx)'),
     (17, 'Meet & greet - Finance & Admin', 'Meet the Finance & Admin team.', 'New Hire', 'Standardized', NULL, NULL, '30-Day', 'New Hire', 'Passport Checklist (xlsx)'),
     (18, 'Meet & greet - Facilities', 'Meet the Facilities team.', 'New Hire', 'Standardized', NULL, NULL, '30-Day', 'New Hire', 'Passport Checklist (xlsx)'),
-    (19, 'Meet & greet - Family Literacy & Adult Education', 'Meet the Family Literacy & Adult Education team.', 'New Hire', 'Standardized', NULL, NULL, '30-Day', 'New Hire', 'Passport Checklist (xlsx)'),
+    (19, 'Meet & greet - Family Literacy', 'Meet the Family Literacy team.', 'New Hire', 'Standardized', NULL, NULL, '30-Day', 'New Hire', 'Passport Checklist (xlsx)'),
     (20, 'Meet & greet - School Age Programs', 'Meet the School Age Programs team.', 'New Hire', 'Standardized', NULL, NULL, '30-Day', 'New Hire', 'Passport Checklist (xlsx)'),
-    (21, 'Confirm schedule and start date/time with supervisor', 'Confirm your schedule and first-day start time.', 'New Hire', 'Department', 1, NULL, 'Pre-Orientation', 'New Hire', 'Sample Passport'),
-    (22, 'Complete Manufacturing Curriculum Storyline', 'Create the learning plan for what happens across the 9-10 classes.', 'New Hire', 'RoleSpecific', 1, 'Curriculum Specialist', '30-Day', 'New Hire', 'Sample Passport'),
-    (23, 'Complete Listening Tour', 'Meet industry partners and other stakeholders.', 'New Hire', 'RoleSpecific', 1, 'Curriculum Specialist', '30-Day', 'New Hire', 'Sample Passport'),
-    (24, 'Assess team wants and needs', 'Observe teachers in action and identify possible professional development needs.', 'New Hire', 'RoleSpecific', 1, 'Curriculum Specialist', '60-Day', 'New Hire', 'Sample Passport'),
-    (25, 'Ready plan for funder visit', 'Curate data, metrics and deliverables into a story to share progress with funders.', 'New Hire', 'RoleSpecific', 1, 'Curriculum Specialist', '60-Day', 'New Hire', 'Sample Passport'),
-    (26, 'Collaborate with Development team on 6-month funder reporting', 'Work with the Development team on the 6-month report for funders.', 'New Hire', 'RoleSpecific', 1, 'Curriculum Specialist', '90-Day', 'New Hire', 'Sample Passport'),
-    (27, 'Complete Healthcare and Technology curriculum for MS', 'Finish the Healthcare and Technology curriculum for middle school.', 'New Hire', 'RoleSpecific', 1, 'Curriculum Specialist', 'Next Steps', 'New Hire', 'Sample Passport'),
+    (21, 'Confirm schedule and start date/time with supervisor', 'Confirm your schedule and first-day start time.', 'New Hire', 'Department', 6, NULL, 'Pre-Orientation', 'New Hire', 'Sample Passport'),
+    (22, 'Complete Manufacturing Curriculum Storyline', 'Create the learning plan for what happens across the 9-10 classes.', 'New Hire', 'RoleSpecific', 6, 'Curriculum Specialist', '30-Day', 'New Hire', 'Sample Passport'),
+    (23, 'Complete Listening Tour', 'Meet industry partners and other stakeholders.', 'New Hire', 'RoleSpecific', 6, 'Curriculum Specialist', '30-Day', 'New Hire', 'Sample Passport'),
+    (24, 'Assess team wants and needs', 'Observe teachers in action and identify possible professional development needs.', 'New Hire', 'RoleSpecific', 6, 'Curriculum Specialist', '60-Day', 'New Hire', 'Sample Passport'),
+    (25, 'Ready plan for funder visit', 'Curate data, metrics and deliverables into a story to share progress with funders.', 'New Hire', 'RoleSpecific', 6, 'Curriculum Specialist', '60-Day', 'New Hire', 'Sample Passport'),
+    (26, 'Collaborate with Development team on 6-month funder reporting', 'Work with the Development team on the 6-month report for funders.', 'New Hire', 'RoleSpecific', 6, 'Curriculum Specialist', '90-Day', 'New Hire', 'Sample Passport'),
+    (27, 'Complete Healthcare and Technology curriculum for MS', 'Finish the Healthcare and Technology curriculum for middle school.', 'New Hire', 'RoleSpecific', 6, 'Curriculum Specialist', 'Next Steps', 'New Hire', 'Sample Passport'),
     (28, 'Complete donor database walkthrough', 'Learn how donor records are searched and updated.', 'New Hire', 'Department', 2, NULL, '30-Day', 'New Hire', 'Sample Data'),
     (29, 'Shadow a volunteer orientation session', 'Sit in on a volunteer orientation session.', 'New Hire', 'Department', 2, NULL, '30-Day', 'New Hire', 'Sample Data'),
     (30, 'Draft first donor thank-you outreach plan', 'Outline how and when donors will be thanked.', 'New Hire', 'Department', 2, NULL, '60-Day', 'New Hire', 'Sample Data'),
@@ -97,7 +190,11 @@ INSERT INTO Task (TaskID, TaskName, Description, AudienceType, TaskCategory, Dep
     (37, 'Complete classroom shadowing (2 sessions)', 'Shadow two classroom sessions with an experienced teacher.', 'New Hire', 'Department', 6, NULL, 'First Week', 'New Hire', 'Sample Data'),
     (38, 'Submit first lesson plan for review', 'Submit your first lesson plan to the director for review.', 'New Hire', 'Department', 6, NULL, '30-Day', 'New Hire', 'Sample Data'),
     (39, 'Meet with director to review 90-day goals', 'Review your goals for the first 90 days.', 'New Hire', 'Department', 6, NULL, '90-Day', 'New Hire', 'Sample Data'),
-    (40, 'Schedule CPR/First Aid certification', 'Register for the next CPR/First Aid session.', 'New Hire', 'AdHoc', 6, NULL, '30-Day', 'New Hire', 'Sample Data');
+    (40, 'Schedule CPR/First Aid certification', 'Register for the next CPR/First Aid session.', 'New Hire', 'AdHoc', 6, NULL, '30-Day', 'New Hire', 'Sample Data'),
+    (41, 'Schedule introductory meetings with each executive', 'Book a short introduction with each member of the executive team.', 'New Hire', 'Department', 1, NULL, 'First Week', 'New Hire', 'Sample Data'),
+    (42, 'Review board and leadership meeting calendar', 'Review the upcoming board and leadership meeting calendar.', 'New Hire', 'Department', 1, NULL, '30-Day', 'New Hire', 'Sample Data'),
+    (43, 'Review HR forms and benefits enrollment process', 'Learn how HR forms and benefits enrollment are handled.', 'New Hire', 'Department', 7, NULL, 'First Week', 'New Hire', 'Sample Data'),
+    (44, 'Review confidentiality and records handling', 'Review how personnel records are stored and who may see them.', 'New Hire', 'Department', 7, NULL, '30-Day', 'New Hire', 'Sample Data');
 
 INSERT INTO Committee (CommitteeID, CommitteeName, Description) VALUES
     (1, 'Staff Culture Committee', 'Plans staff recognition and team-building.'),
@@ -378,7 +475,7 @@ INSERT INTO MeetAndGreet (MeetAndGreetID, EmployeeID, HostEmployeeID, ScheduledD
     (37, 14, 5, '2026-10-28', '14:00:00', 'Adult Education Wing', 'Upcoming session.'),
     (38, 14, 6, '2026-10-20', '14:30:00', 'School Age Programs Office', 'Upcoming session.');
 
--- Keep the identity counters ahead of the rows inserted with explicit IDs,
+-- Keep the serial counters ahead of the rows inserted with explicit IDs,
 -- so the application can insert new rows without ID collisions.
 SELECT setval(pg_get_serial_sequence('department', 'departmentid'), (SELECT MAX(DepartmentID) FROM Department));
 SELECT setval(pg_get_serial_sequence('employee', 'employeeid'), (SELECT MAX(EmployeeID) FROM Employee));
