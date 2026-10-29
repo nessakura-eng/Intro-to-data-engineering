@@ -1,11 +1,15 @@
 # Packages the "Code Base" folder into a zip for handoff to Grace Place.
 # Run it from the repo's Actions tab: "Package Code Base for Grace Place" > Run workflow.
-# The zip appears at the bottom of the run page under "Artifacts" (kept 30 days).
+# It publishes a Release (shown under "Releases" on the repo homepage) with the zip attached,
+# and also keeps a copy under "Artifacts" on the run page.
 # Secrets and build leftovers are left out: .env files, node_modules, dist, .git.
 name: Package Code Base for Grace Place
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   package:
@@ -29,9 +33,18 @@ jobs:
             echo "A secrets file got into the zip. Stopping."; exit 1
           fi
 
-      - name: Upload the zip
+      - name: Keep a copy as an artifact
         uses: actions/upload-artifact@v4
         with:
           name: Grace-Place-Code-Base
           path: out/*.zip
           retention-days: 30
+
+      - name: Publish a Release with the zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="handoff-$(date +%Y-%m-%d-%H%M)"
+          gh release create "$tag" out/*.zip \
+            --title "Grace Place handoff $(date +%Y-%m-%d)" \
+            --notes "Code Base folder packaged for Grace Place (no secrets, node_modules or build files)."
