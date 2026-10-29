@@ -8,7 +8,7 @@ export const COLS = {
   Department: ['DepartmentID', 'DepartmentName', 'GracePlaceTerm'],
   Employee: ['EmployeeID', 'Name', 'DepartmentID', 'RoleTitle', 'EmploymentType', 'HireDate', 'OrientationCompleteDate', 'Email'],
   // PasswordHash is never requested by the browser.
-  Account: ['AccountID', 'EmployeeID', 'Username', 'AccountType'],
+  Account: ['AccountID', 'EmployeeID', 'Username', 'AccountType', 'IsHR'],
   Task: ['TaskID', 'TaskName', 'Description', 'AudienceType', 'TaskCategory', 'DepartmentID', 'RoleTitle', 'Checkpoint', 'PerformedBy', 'SourceDocument'],
   TaskAssignment: ['AssignmentID', 'EmployeeID', 'TaskID', 'AssignedByEmployeeID', 'Status', 'DueDate', 'DateCompleted'],
   Attachment: ['AttachmentID', 'AssignmentID', 'UploadedByEmployeeID', 'FileName', 'FileURL', 'TextNote', 'UploadedAt'],
@@ -46,7 +46,7 @@ export async function signInWithUsername(username, password) {
   const { data: email, error } = await supabase.rpc('login_email', { p_username: username.trim() })
   if (error) {
     throw new Error(
-      'Could not look up that username (' + error.message + '). Run sql/Grace-Place-Supabase-Security.sql in the Supabase SQL Editor and check the key in .env.local.',
+      'Could not look up that username (' + error.message + '). Run sql/Team-3-Supabase-Security.sql in the Supabase SQL Editor and check the key in .env.local.',
     )
   }
   if (!email) throw new Error('No account has that username.')
@@ -73,6 +73,7 @@ export const TOUCHES = {
   remove: ['TaskAssignment', 'Attachment', 'TaskComment'],
   deleteTask: ['Task', 'TaskAssignment', 'Attachment', 'TaskComment'],
   meet: ['MeetAndGreet'],
+  addHire: ['Employee', 'Account'],
 }
 
 const asgRow = (employeeId, taskId, byId, due) => ({
@@ -189,6 +190,17 @@ export async function perform(a, ctx) {
         location: a.location || null,
       })
       return fail(error, 'Could not schedule the meet and greet')
+    }
+    case 'addHire': {
+      // Runs on Supabase (Edge Function add-new-hire): creates the login, Employee and Account together.
+      const { error } = await supabase.functions.invoke('add-new-hire', { body: a.form })
+      if (error) {
+        let msg = error.message
+        try { msg = (await error.context.json()).error || msg } catch { /* keep the generic message */ }
+        if (/failed to send|not found|404/i.test(msg)) msg = 'The add-new-hire function is not set up in Supabase yet. See the handoff guide.'
+        throw new Error(msg)
+      }
+      return undefined
     }
     default:
       return undefined
