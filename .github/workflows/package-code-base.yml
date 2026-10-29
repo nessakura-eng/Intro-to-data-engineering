@@ -1,0 +1,37 @@
+# Packages the "Code Base" folder into a zip for handoff to Grace Place.
+# Run it from the repo's Actions tab: "Package Code Base for Grace Place" > Run workflow.
+# The zip appears at the bottom of the run page under "Artifacts" (kept 30 days).
+# Secrets and build leftovers are left out: .env files, node_modules, dist, .git.
+name: Package Code Base for Grace Place
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Build the zip
+        run: |
+          set -e
+          stamp=$(date +%Y-%m-%d)
+          mkdir -p out
+          cd "Code Base"
+          zip -r "../out/Grace-Place-Code-Base-$stamp.zip" . \
+            -x "node_modules/*" "dist/*" ".git/*" ".env" ".env.*" "*.env.local" ".vercel/*" ".DS_Store"
+          cd ..
+          echo "Files in the zip:"
+          unzip -l "out/Grace-Place-Code-Base-$stamp.zip" | tail -n 25
+          if unzip -l "out/Grace-Place-Code-Base-$stamp.zip" | grep -E "\.env"; then
+            echo "A secrets file got into the zip. Stopping."; exit 1
+          fi
+
+      - name: Upload the zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Grace-Place-Code-Base
+          path: out/*.zip
+          retention-days: 30
