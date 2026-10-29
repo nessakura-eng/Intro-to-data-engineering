@@ -113,9 +113,11 @@ export default function App() {
           r.AssignmentID === action.id ? { ...r, Status: action.status, DateCompleted: action.status === 'Completed' ? NOW : null } : r),
       }))
     }
+    let ok = true
     try {
       await perform(action, { userId: me.EmployeeID, db: current })
     } catch (e) {
+      ok = false
       setToast(e.message)
     }
     try {
@@ -124,6 +126,7 @@ export default function App() {
     } catch (e) {
       setToast(e.message)
     }
+    return ok
   }, [session])
 
   const S = useMemo(() => (db ? makeSelectors(db) : null), [db])
@@ -146,7 +149,8 @@ export default function App() {
   if (!meRow)
     return <Splash text="This login is not linked to an employee record. Ask an administrator to check the Employee email." action={<button className="btn" onClick={signOut}>Sign out</button>} />
   const userId = meRow.EmployeeID
-  const ctx = { db, dispatch, S, userId, go, route, notify: setToast }
+  const isHR = db.Account.some((x) => x.EmployeeID === userId && x.IsHR === true)
+  const ctx = { db, dispatch, S, userId, go, route, notify: setToast, isHR }
   const me = S.emp.get(userId)
   const isMgr = S.roleOf(userId) === 'Manager'
 
@@ -1024,21 +1028,25 @@ function AddTask({ hire, me, defaultBy, onDone }) {
 }
 
 function Directory() {
-  const { db, S, go } = useApp()
+  const { db, S, go, isHR } = useApp()
   const [term, setTerm] = useState('')
+  const [adding, setAdding] = useState(false)
   const match = (e) => !term.trim() || e.Name.toLowerCase().includes(term.trim().toLowerCase()) || e.RoleTitle.toLowerCase().includes(term.trim().toLowerCase())
   return (
     <>
       <div className="page-head">
         <div><h1>Directory</h1><p className="muted">Everyone at Grace Place, grouped by department. Every manager can open any department.</p></div>
         <div className="filter"><label htmlFor="dir-q" className="sr">Filter people</label><input id="dir-q" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Filter by name or role" /></div>
+        {isHR && <button className="btn primary" onClick={() => setAdding(true)}><Icon n="plus" /> Add new hire</button>}
       </div>
+      {adding && <AddHireModal onClose={() => setAdding(false)} />}
       <div className="dept-list">
         {db.Department.map((d) => {
           const people = db.Employee.filter((e) => e.DepartmentID === d.DepartmentID)
           const mg = people.filter((e) => S.roleOf(e.EmployeeID) === 'Manager' && match(e))
           const nh = people.filter((e) => S.roleOf(e.EmployeeID) === 'New Hire' && match(e))
-          if (term && !mg.length && !nh.length) return null
+          const st = people.filter((e) => !S.roleOf(e.EmployeeID) && match(e))
+          if (term && !mg.length && !nh.length && !st.length) return null
           return (
             <section key={d.DepartmentID} className="card dept">
               <h2>{d.DepartmentName}<span className="muted">{people.filter((e) => S.roleOf(e.EmployeeID) === 'New Hire').length} new hire(s)</span></h2>
@@ -1046,6 +1054,11 @@ function Directory() {
                 {mg.map((e) => (
                   <li key={e.EmployeeID}>
                     <div className="person static"><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle} · {e.Email}</small></span><span className="chip role">Manager</span></div>
+                  </li>
+                ))}
+                {st.map((e) => (
+                  <li key={e.EmployeeID}>
+                    <div className="person static"><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle}{e.Email ? ' · ' + e.Email : ''}</small></span><span className="chip role">Staff</span></div>
                   </li>
                 ))}
                 {nh.map((e) => {
@@ -1065,6 +1078,84 @@ function Directory() {
         })}
       </div>
     </>
+  )
+}
+
+function AddHireModal({ onClose }) {
+  const { db, dispatch, notify } = useApp()
+  const blank = { name: '', email: '', username: '', departmentId: '', roleTitle: '', employmentType: 'Full-time', hireDate: '', password: '' }
+  const [f, setF] = useState(blank)
+  const [userEdited, setUserEdited] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const set = (k, v) => setF((p) => ({ ...p, [k]: v }))
+  const setEmail = (v) => setF((p) => ({ ...p, email: v, username: userEdited ? p.username : v.split('@')[0].toLowerCase() }))
+  const submit = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    const ok = await dispatch({ type: 'addHire', form: { ...f, departmentId: Number(f.departmentId) } })
+    setBusy(false)
+    if (ok) {
+      notify(f.name + ' was added. They can sign in with username ' + f.username + ' and the temporary password.')
+      onClose()
+    }
+  }
+  return (
+    <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="addhire-title" style={{ maxWidth: 620 }}>
+        <div className="modal-head">
+          <h2 id="addhire-title">Add new hire</h2>
+          <button className="btn ghost" onClick={onClose} aria-label="Close">Close</button>
+        </div>
+        <p className="muted">This creates the person's employee record and their login. Tasks are assigned afterwards from their profile.</p>
+        <form className="stack-form" onSubmit={submit}>
+          <label htmlFor="ah-name">Full name</label>
+          <input id="ah-name" required value={f.name} onChange={(e) => set('name', e.target.value)} />
+          <label htmlFor="ah-email">Work email</label>
+          <input id="ah-email" type="email" required value={f.email} onChange={(e) => setEmail(e.target.value)} placeholder="first.last@graceplacenaples.org" />
+          <div className="two">
+            <div>
+              <label htmlFor="ah-dept">Department</label>
+              <select id="ah-dept" required value={f.departmentId} onChange={(e) => set('departmentId', e.target.value)}>
+                <option value="">Choose a department</option>
+                {db.Department.map((d) => <option key={d.DepartmentID} value={d.DepartmentID}>{d.DepartmentName}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="ah-role">Job title</label>
+              <input id="ah-role" required value={f.roleTitle} onChange={(e) => set('roleTitle', e.target.value)} />
+            </div>
+          </div>
+          <div className="two">
+            <div>
+              <label htmlFor="ah-type">Employment type</label>
+              <select id="ah-type" required value={f.employmentType} onChange={(e) => set('employmentType', e.target.value)}>
+                <option>Full-time</option>
+                <option>Part-time</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="ah-date">Hire date</label>
+              <input id="ah-date" type="date" required value={f.hireDate} onChange={(e) => set('hireDate', e.target.value)} />
+            </div>
+          </div>
+          <div className="two">
+            <div>
+              <label htmlFor="ah-user">Username</label>
+              <input id="ah-user" required value={f.username} onChange={(e) => { setUserEdited(true); set('username', e.target.value.toLowerCase()) }} />
+            </div>
+            <div>
+              <label htmlFor="ah-pw">Temporary password</label>
+              <input id="ah-pw" type="text" required minLength={8} autoComplete="off" value={f.password} onChange={(e) => set('password', e.target.value)} />
+            </div>
+          </div>
+          <p className="tiny muted">Share the username and temporary password with the new hire. The account type is New Hire.</p>
+          <div className="actions">
+            <button className="btn primary" type="submit" disabled={busy}>{busy ? 'Adding' : 'Add new hire'}</button>
+            <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
 
