@@ -1028,10 +1028,25 @@ function AddTask({ hire, me, defaultBy, onDone }) {
 }
 
 function Directory() {
-  const { db, S, go, isHR, userId } = useApp()
+  const { db, S, go, isHR } = useApp()
   const [term, setTerm] = useState('')
   const [adding, setAdding] = useState(false)
+  const [viewId, setViewId] = useState(null)
   const match = (e) => !term.trim() || e.Name.toLowerCase().includes(term.trim().toLowerCase()) || e.RoleTitle.toLowerCase().includes(term.trim().toLowerCase())
+  const viewing = viewId ? db.Employee.find((e) => e.EmployeeID === viewId) : null
+  // HR opens an overview popup for anyone. Other managers open a new hire's profile page.
+  const open = (e) => (isHR ? setViewId(e.EmployeeID) : go('hire', { id: e.EmployeeID }))
+  const row = (e, chip, small, extra) => {
+    const clickable = isHR || S.roleOf(e.EmployeeID) === 'New Hire'
+    const body = <><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{small}</small></span>{chip}{extra}</>
+    return (
+      <li key={e.EmployeeID}>
+        {clickable
+          ? <button className="person" onClick={() => open(e)}>{body}</button>
+          : <div className="person static">{body}</div>}
+      </li>
+    )
+  }
   return (
     <>
       <div className="page-head">
@@ -1040,6 +1055,7 @@ function Directory() {
         {isHR && <button className="btn primary" onClick={() => setAdding(true)}><Icon n="plus" /> Add new hire</button>}
       </div>
       {adding && <AddHireModal onClose={() => setAdding(false)} />}
+      {viewing && <PersonModal emp={viewing} onClose={() => setViewId(null)} />}
       <div className="dept-list">
         {db.Department.map((d) => {
           const people = db.Employee.filter((e) => e.DepartmentID === d.DepartmentID)
@@ -1051,29 +1067,11 @@ function Directory() {
             <section key={d.DepartmentID} className="card dept">
               <h2>{d.DepartmentName}<span className="muted">{people.filter((e) => S.roleOf(e.EmployeeID) === 'New Hire').length} new hire(s)</span></h2>
               <ul className="people">
-                {mg.map((e) => (
-                  <li key={e.EmployeeID}>
-                    <div className="person static"><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle} · {e.Email}</small></span><span className="chip role">Manager</span></div>
-                    {isHR && e.EmployeeID !== userId && <DeleteHireButton emp={e} />}
-                  </li>
-                ))}
-                {st.map((e) => (
-                  <li key={e.EmployeeID}>
-                    <div className="person static"><Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle}{e.Email ? ' · ' + e.Email : ''}</small></span><span className="chip role">Staff</span></div>
-                    {isHR && e.EmployeeID !== userId && <DeleteHireButton emp={e} />}
-                  </li>
-                ))}
+                {mg.map((e) => row(e, <span className="chip role">Manager</span>, e.RoleTitle + ' · ' + e.Email))}
+                {st.map((e) => row(e, <span className="chip role">Staff</span>, e.RoleTitle + (e.Email ? ' · ' + e.Email : '')))}
                 {nh.map((e) => {
                   const p = S.progress(S.joined(e.EmployeeID).filter((a) => a.task.PerformedBy === 'New Hire'))
-                  return (
-                    <li key={e.EmployeeID}>
-                      <button className="person" onClick={() => go('hire', { id: e.EmployeeID })}>
-                        <Avatar emp={e} size={36} /><span><b>{e.Name}</b><small>{e.RoleTitle} · Hired {fmtShort(e.HireDate)}</small></span>
-                        <span className="mini"><Bar pct={p.pct} label={e.Name + ' progress'} /><small>{p.pct}%</small></span>
-                      </button>
-                      {isHR && e.EmployeeID !== userId && <DeleteHireButton emp={e} />}
-                    </li>
-                  )
+                  return row(e, null, e.RoleTitle + ' · Hired ' + fmtShort(e.HireDate), <span className="mini"><Bar pct={p.pct} label={e.Name + ' progress'} /><small>{p.pct}%</small></span>)
                 })}
               </ul>
             </section>
@@ -1084,23 +1082,59 @@ function Directory() {
   )
 }
 
-function DeleteHireButton({ emp }) {
-  const { dispatch, notify } = useApp()
+// HR only: overview of one person, and the only place a person can be deleted.
+function PersonModal({ emp, onClose }) {
+  const { S, db, go, userId, dispatch, notify } = useApp()
+  const [sure, setSure] = useState(false)
   const [busy, setBusy] = useState(false)
+  const role = S.roleOf(emp.EmployeeID)
+  const isSelf = emp.EmployeeID === userId
+  const groups = db.EmployeeCommittee.filter((c) => c.EmployeeID === emp.EmployeeID)
+  const cm = new Map(db.Committee.map((c) => [c.CommitteeID, c]))
   const remove = async () => {
-    const ok = window.confirm(
-      'Delete ' + emp.Name + ' from the portal?\n\nThis removes their login, account, assigned tasks, proof uploads, comments, meet and greets and committee memberships. This cannot be undone.',
-    )
-    if (!ok) return
     setBusy(true)
-    const done = await dispatch({ type: 'deleteEmployee', id: emp.EmployeeID })
+    const ok = await dispatch({ type: 'deleteEmployee', id: emp.EmployeeID })
     setBusy(false)
-    if (done) notify(emp.Name + ' was deleted.')
+    if (ok) {
+      notify(emp.Name + ' was deleted.')
+      onClose()
+    } else setSure(false)
   }
   return (
-    <button className="btn ghost" onClick={remove} disabled={busy} aria-label={'Delete ' + emp.Name} title={'Delete ' + emp.Name}>
-      <Icon n="x" />
-    </button>
+    <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="person-title" style={{ maxWidth: 620 }}>
+        <div className="modal-head">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <Avatar emp={emp} size={52} />
+            <div><h2 id="person-title">{emp.Name}</h2><p className="muted">{emp.RoleTitle} · {S.dept.get(emp.DepartmentID).DepartmentName}</p></div>
+          </div>
+          <button className="btn ghost" onClick={onClose} aria-label="Close">Close</button>
+        </div>
+        <dl className="facts stack">
+          <div><dt>Email</dt><dd>{emp.Email || 'None'}</dd></div>
+          <div><dt>Employment type</dt><dd>{emp.EmploymentType || 'Not set'}</dd></div>
+          <div><dt>Hire date</dt><dd>{emp.HireDate ? fmtDate(emp.HireDate) : 'Not set'}</dd></div>
+          <div><dt>Orientation completed</dt><dd>{emp.OrientationCompleteDate ? fmtDate(emp.OrientationCompleteDate) : 'Not yet'}</dd></div>
+          <div><dt>Account</dt><dd>{S.acct.get(emp.EmployeeID)?.Username || 'None'}{role ? ` (${role})` : ''}</dd></div>
+          <div><dt>Committees</dt><dd>{groups.length ? groups.map((g) => cm.get(g.CommitteeID).CommitteeName).join(', ') : 'None'}</dd></div>
+        </dl>
+        {role === 'New Hire' && (
+          <div><button className="btn" onClick={() => go('hire', { id: emp.EmployeeID })}>Open full profile</button></div>
+        )}
+        <hr />
+        {isSelf ? (
+          <p className="muted">You cannot delete your own account.</p>
+        ) : !sure ? (
+          <div><button className="btn danger-ghost" onClick={() => setSure(true)}>Delete {emp.Name.split(' ')[0]} from the portal</button></div>
+        ) : (
+          <div className="confirm">
+            <span>This deletes their login, account, tasks, comments, proof, meet and greets and committee memberships. It cannot be undone. Delete {emp.Name}?</span>
+            <button className="btn danger" disabled={busy} onClick={remove}>{busy ? 'Deleting' : 'Yes, delete'}</button>
+            <button className="btn" disabled={busy} onClick={() => setSure(false)}>Cancel</button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
