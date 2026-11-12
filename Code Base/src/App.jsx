@@ -7,6 +7,7 @@ import {
 import { supabase, isConfigured } from './supabase.js'
 import { TABLES, fetchTables, perform, TOUCHES, signInWithUsername, signOut as apiSignOut } from './api.js'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from './demoAccounts.js'
+import PrintPassport from './PrintPassport.jsx'
 
 const Ctx = createContext(null)
 const useApp = () => useContext(Ctx)
@@ -23,6 +24,7 @@ const Icon = ({ n }) => {
     plus: 'M12 5v14M5 12h14',
     x: 'M6 6l12 12M18 6L6 18',
     warn: 'M12 4l9 16H3L12 4zM12 10v4M12 17v.5',
+    print: 'M7 9V4h10v5M7 17H5v-6h14v6h-2M7 14h10v6H7z',
   }[n]
   return (
     <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
@@ -201,7 +203,7 @@ function Header({ me, isMgr, onSignOut }) {
   const nav = isMgr
     ? [['home', 'Home'], ['directory', 'Directory'], ['library', 'Task library']]
     : [['home', 'Home'], ['passport', 'My passport'], ['profile', 'My profile']]
-  const active = route.page === 'hire' ? 'home' : route.page
+  const active = route.page === 'hire' ? 'home' : route.page === 'print' ? (isMgr ? 'home' : 'profile') : route.page
   const hits = term.trim().length > 1
     ? db.Employee.filter((e) => e.Name.toLowerCase().includes(term.trim().toLowerCase())).slice(0, 6)
     : []
@@ -576,9 +578,10 @@ function RemoveButton({ id }) {
 
 /* ---------- new hire screens ---------- */
 function HireRoutes() {
-  const { route } = useApp()
+  const { route, userId } = useApp()
   if (route.page === 'passport') return <MyPassport />
   if (route.page === 'profile') return <MyProfile />
+  if (route.page === 'print') return <PrintRoute id={userId} backTo={{ page: 'profile' }} />
   return <HireHome />
 }
 
@@ -694,13 +697,29 @@ function MyPassport() {
   )
 }
 
+/* Printable passport. A new hire can only print their own (the id is the signed-in user's);
+   managers and HR can print any new hire's. The database's access rules still decide what rows come back. */
+function PrintRoute({ id, backTo }) {
+  const { S, go } = useApp()
+  const hire = S.emp.get(id)
+  if (!hire) return <p className="empty">That person was not found.</p>
+  return <PrintPassport hire={hire} S={S} items={S.joined(id)} onBack={() => go(backTo.page, backTo)} />
+}
+
+function PrintButton({ id }) {
+  const { go } = useApp()
+  return (
+    <button className="btn" onClick={() => go('print', { id })}><Icon n="print" /> Print passport</button>
+  )
+}
+
 function MyProfile() {
   const { S, userId, db } = useApp()
   const me = S.emp.get(userId)
   const meets = db.MeetAndGreet.filter((m) => m.EmployeeID === userId).sort((a, b) => a.ScheduledDate.localeCompare(b.ScheduledDate))
   return (
     <>
-      <PersonHeader emp={me} />
+      <PersonHeader emp={me} extra={<PrintButton id={userId} />} />
       <div className="two-col">
         <PersonFacts emp={me} />
         <MeetList meets={meets} />
@@ -803,6 +822,7 @@ function MeetForm({ hire }) {
 function ManagerRoutes() {
   const { route } = useApp()
   if (route.page === 'hire') return <HireProfile id={route.id} />
+  if (route.page === 'print') return <PrintRoute id={route.id} backTo={{ page: 'hire', id: route.id }} />
   if (route.page === 'directory') return <Directory />
   if (route.page === 'library') return <Library />
   return <ManagerHome />
@@ -914,10 +934,13 @@ function HireProfile({ id }) {
         <button className="link" onClick={() => go('home')}>Home</button> / <button className="link" onClick={() => go('directory')}>Directory</button> / <span>{hire.Name}</span>
       </nav>
       <PersonHeader emp={hire} extra={
-        <div className="ph-prog">
-          <div><b>{pm.pct}%</b> passport<Bar pct={pm.pct} label="Passport progress" /><small>{pm.done}/{pm.total} done{pm.overdue ? `, ${pm.overdue} overdue` : ''}</small></div>
-          <div><b>{pg.pct}%</b> manager checklist<Bar pct={pg.pct} label="Manager checklist progress" /><small>{pg.done}/{pg.total} done</small></div>
-        </div>
+        <>
+          <div className="ph-prog">
+            <div><b>{pm.pct}%</b> passport<Bar pct={pm.pct} label="Passport progress" /><small>{pm.done}/{pm.total} done{pm.overdue ? `, ${pm.overdue} overdue` : ''}</small></div>
+            <div><b>{pg.pct}%</b> manager checklist<Bar pct={pg.pct} label="Manager checklist progress" /><small>{pg.done}/{pg.total} done</small></div>
+          </div>
+          <PrintButton id={hire.EmployeeID} />
+        </>
       } />
       {outside && <p className="notice">{hire.Name} is in {S.dept.get(hire.DepartmentID).DepartmentName}. Managers can view and edit any department.</p>}
       <div className="subtabs" role="tablist">
@@ -1119,7 +1142,10 @@ function PersonModal({ emp, onClose }) {
           <div><dt>Committees</dt><dd>{groups.length ? groups.map((g) => cm.get(g.CommitteeID).CommitteeName).join(', ') : 'None'}</dd></div>
         </dl>
         {role === 'New Hire' && (
-          <div><button className="btn" onClick={() => go('hire', { id: emp.EmployeeID })}>Open full profile</button></div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="btn" onClick={() => go('hire', { id: emp.EmployeeID })}>Open full profile</button>
+            <button className="btn" onClick={() => go('print', { id: emp.EmployeeID })}><Icon n="print" /> Print passport</button>
+          </div>
         )}
         <hr />
         {isSelf ? (
