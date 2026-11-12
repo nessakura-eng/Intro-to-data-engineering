@@ -358,3 +358,44 @@ button.person:hover { background: var(--surface-2); }
 .splash { max-width: 520px; margin: 12vh auto; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
 .splash .logo-img { height: 84px; padding: 0; }
 .envbox { background: var(--code-bg); color: var(--code-ink); font-family: var(--mono); font-size: 0.82rem; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 0; width: 100%; }
+
+/* ---------- printable passport ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.print-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.print-sheet { background: #fff; color: #1d1b1b; border: 1px solid var(--line); border-radius: 8px; padding: 28px 32px 36px; max-width: 900px; margin-inline: auto; width: 100%; font-size: 0.92rem; }
+.print-sheet .muted { color: #5c5755; }
+.ps-head { display: flex; gap: 18px; align-items: center; border-bottom: 3px solid #d63222; padding-bottom: 14px; }
+.ps-logo { height: 64px; width: auto; }
+.ps-head h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.ps-head p { margin: 1px 0; }
+.ps-head .ps-name { font-size: 1.15rem; font-weight: 700; }
+.ps-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0 6px; }
+.ps-summary > div { border: 1px solid #bdb8b4; border-radius: 6px; padding: 8px 10px; display: grid; }
+.ps-summary b { font-size: 1.2rem; }
+.ps-summary span { font-size: 0.78rem; color: #5c5755; }
+.ps-side h2 { font-size: 1.15rem; margin: 22px 0 4px; border-bottom: 1px solid #bdb8b4; padding-bottom: 4px; }
+.ps-side h2 small { font-size: 0.8rem; font-weight: 400; color: #5c5755; margin-left: 6px; }
+.ps-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 10px 0 4px; break-inside: auto; }
+.ps-table th:nth-child(3) { width: 14%; }
+.ps-table th:nth-child(4), .ps-table th:nth-child(5) { width: 15%; }
+.ps-table th:nth-child(6) { width: 15%; }
+.ps-table td:nth-child(4), .ps-table td:nth-child(5) { white-space: nowrap; }
+.ps-table caption { text-align: left; font-weight: 700; padding: 4px 0; font-size: 0.95rem; break-after: avoid; }
+.ps-table th { text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: #5c5755; border-bottom: 1px solid #8a8582; padding: 3px 6px; }
+.ps-table td { padding: 5px 6px; border-bottom: 1px solid #dcd8d5; vertical-align: top; }
+.ps-table tr { break-inside: avoid; }
+.ps-table .c-box { width: 26px; }
+.pbox { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border: 1.5px solid #1d1b1b; border-radius: 3px; font-size: 12px; line-height: 1; font-weight: 700; }
+.ps-empty { margin: 20px 0; font-style: italic; }
+.ps-sign { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 28px; margin-top: 44px; break-inside: avoid; }
+.ps-sign span { display: block; border-bottom: 1px solid #1d1b1b; height: 28px; }
+.ps-sign small { color: #5c5755; }
+@media screen and (max-width: 820px) { .ps-summary { grid-template-columns: repeat(2, 1fr); } .ps-head { flex-wrap: wrap; } .ps-table { font-size: 0.82rem; } }
+@media print {
+  @page { margin: 14mm; }
+  html, body { background: #fff !important; }
+  body::before, .strip, .tri, .top, .toast, .no-print { display: none !important; }
+  .page { padding: 0 !important; max-width: none !important; display: block !important; }
+  .print-sheet { border: 0; border-radius: 0; padding: 0; max-width: none; font-size: 10.5pt; }
+  .ps-summary > div, .pbox, .ps-head { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
