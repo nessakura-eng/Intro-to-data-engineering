@@ -25,11 +25,11 @@ jobs:
           mkdir -p out
           cd "Code Base"
           zip -r "../out/Grace-Place-Code-Base-$stamp.zip" . \
-            -x "node_modules/*" "dist/*" ".git/*" ".env" ".env.*" "*.env.local" ".vercel/*" ".DS_Store"
+            -x "node_modules/*" "dist/*" ".git/*" ".env" ".env.local" ".env.*.local" ".vercel/*" ".DS_Store"
           cd ..
           echo "Files in the zip:"
           unzip -l "out/Grace-Place-Code-Base-$stamp.zip" | tail -n 25
-          if unzip -l "out/Grace-Place-Code-Base-$stamp.zip" | grep -E "\.env"; then
+          if unzip -l "out/Grace-Place-Code-Base-$stamp.zip" | grep -E "\.env(\.local)?$"; then
             echo "A secrets file got into the zip. Stopping."; exit 1
           fi
 
