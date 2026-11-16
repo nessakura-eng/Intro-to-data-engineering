@@ -1,12 +1,8 @@
 # Grace Place Onboarding Passport
 
 A web app and database that carry a new hire through their first 90 days at
-**Grace Place for Children and Families** (Naples, FL). It replaces the shared Excel file and
-printed passport with one system: managers assign and track tasks, new hires work through their own
-passport, and HR can add or remove people.
-
-Built by Team 3, "The Illuminati" (COP 3710, Intro to Data Engineering, FGCU), for our community
-partner Grace Place.
+**Grace Place for Children and Families**. Managers assign and track tasks, new hires work through
+their own passport, and HR can add or remove people.
 
 | | |
 |---|---|
@@ -14,161 +10,124 @@ partner Grace Place.
 | Database | PostgreSQL on [Supabase](https://supabase.com) |
 | Sign-in | Supabase Auth (email + password) |
 | Server code | Two Supabase Edge Functions (add and delete people) |
-| Hosting | Any static host, such as Vercel |
+| Hosting | Any static web host (for example Netlify) |
 
-## What it does
-
-- **Two task lists.** Management-only tasks (shirts, logins, facility tour) are never shown to the new hire.
-  The passport tasks are the new hire's own checklist, tagged Pre-Orientation, First Week, 30-, 60-, 90-Day or Next Steps.
-- **Managers** see every department, assign tasks from the library or add one-off tasks, mark tasks complete,
-  comment, and schedule meet and greets.
-- **New hires** see only their own passport, can start a task, comment, and attach proof (a file name or a note).
-- **HR** (accounts with `IsHR = TRUE`) can add a new hire and delete a person from the Directory.
-  The login, employee record and account are created together.
-- **Committees and meet and greets** are tracked per person.
-- Rules are enforced in the database with row-level security, not only in the screens.
-
-## Repository layout
+## What is in this folder
 
 ```
 .
-├── README.md                      this file
-├── .github/workflows/
-│   └── package-code-base.yml      optional: zips "Code Base" into a downloadable Release
-└── Code Base/
-    ├── src/                       React app (App.jsx, api.js, lib.js, demoAccounts.js, styles.css)
-    ├── sql/
-    │   ├── Grace-Place-DDL.sql                 creates the 10 tables
-    │   ├── Grace-Place-Data.sql                starting data (staff, accounts, tasks, sample demo data)
-    │   ├── Grace-Place-Supabase-Security.sql   row-level security, login lookup, status rule
-    │   └── Grace-Place-Queries.sql             the ten report queries
-    ├── supabase/functions/
-    │   ├── add-new-hire/index.ts               HR: create login + employee + account
-    │   └── delete-employee/index.ts            HR: remove a person and everything tied to them
-    ├── scripts/create-auth-users.mjs           creates Supabase logins for everyone in the Account table
-    ├── .env.example                            copy to .env.local and fill in
-    └── package.json
+├── sql/
+│   ├── Grace-Place-DDL.sql                 creates the 10 tables (wipes existing ones)
+│   ├── Grace-Place-Data.sql                starting data: departments, staff, accounts, tasks
+│   ├── Grace-Place-Supabase-Security.sql   Supabase only: who can read or change what, login lookup
+│   └── Grace-Place-Queries.sql             ten read-only report queries (optional)
+├── supabase/functions/
+│   ├── add-new-hire/index.ts               HR: create login + employee + account
+│   └── delete-employee/index.ts            HR: remove a person and everything tied to them
+├── scripts/create-auth-users.mjs           creates Supabase logins for everyone in the Account table
+├── src/                                    the React app
+├── .env.example                            copy to .env.local and fill in
+└── package.json
 ```
 
-## The database
+## Setup (do these once, in order)
 
-Ten tables: `Department`, `Employee`, `Account`, `Task`, `TaskAssignment`, `Attachment`, `TaskComment`,
-`Committee`, `EmployeeCommittee`, `MeetAndGreet`.
+### 1. Load the database
 
-- Managers, new hires and HR staff are all rows in `Employee`. `Account.AccountType` is `Manager` or `New Hire`,
-  and `Account.IsHR` marks the people who may add and delete others.
-- `TaskAssignment` links one employee to one task and holds the status, due date and completion date.
-- The starting data has seven departments and 54 people: 14 fictional sample people (with demo progress)
-  and the 40 real staff from [graceplacenaples.org/staff](https://graceplacenaples.org/staff/).
-  Staff with manager, director or chief titles have Manager accounts. Six staff in non-management roles have New Hire accounts.
-  Delete the sample rows when going live.
-- Re-running `Grace-Place-DDL.sql` **wipes every table**. Run the SQL files again in order afterwards.
+The SQL is standard PostgreSQL. On Supabase: create a project at supabase.com (the free tier is fine), open
+**SQL Editor**, paste each file and press the plain **Run** button (not the "enable RLS" suggestion), in this order:
 
-## Setup
+1. `sql/Grace-Place-DDL.sql`
+2. `sql/Grace-Place-Data.sql`
+3. `sql/Grace-Place-Supabase-Security.sql`
 
-Run everything in the `Code Base` folder.
-
-### 1. Supabase project
-
-1. Create a project at supabase.com (the free tier is fine).
-2. In **SQL Editor**, paste and run these files in order with the plain **Run** button
-   (not the "enable RLS" suggestion):
-   1. `sql/Grace-Place-DDL.sql`
-   2. `sql/Grace-Place-Data.sql`
-   3. `sql/Grace-Place-Supabase-Security.sql`
+The DDL and Data files also work on any other PostgreSQL host (paste into its SQL editor, or run
+`psql "YOUR_CONNECTION_STRING" -f sql/Grace-Place-DDL.sql -f sql/Grace-Place-Data.sql`). The security file and the
+website's sign-in need Supabase. Re-running the DDL file **wipes every table**.
 
 ### 2. Connect the app
 
-Copy `.env.example` to `.env.local` and set:
+Copy `.env.example` to `.env.local` (in this folder, next to `package.json`) and fill in:
 
 | Variable | What it is |
 |---|---|
-| `VITE_SUPABASE_URL` | Project Settings > API > Project URL |
-| `VITE_SUPABASE_ANON_KEY` | The public anon key (safe in the browser) |
-| `VITE_SHOW_DEMO_ACCOUNTS` | `false` hides the sample sign-in buttons (optional) |
-| `VITE_DEMO_TODAY` | Freeze "today" to a date such as `2026-10-19` for the sample data (optional, default is the real date) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Only for `npm run seed:auth`. **Secret.** Never put it in a `VITE_` variable or commit it |
+| `VITE_SUPABASE_URL` | Supabase > Project Settings > API > Project URL |
+| `VITE_SUPABASE_ANON_KEY` | The public `anon` key (safe in the browser) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret key, used only in step 3. Never put it in a `VITE_` variable or share it |
+| `SEED_PASSWORD` | Optional. The starting password for every login (default `Passport2026!`) |
+| `VITE_SHOW_DEMO_ACCOUNTS` | Optional. `false` hides the sample sign-in buttons |
 
 ### 3. Create the logins
 
-Supabase Auth keeps the real passwords, so each person needs an Auth user with the same email as their Employee row.
+Supabase Auth keeps the real passwords, so each person needs a login that matches their Employee email.
+This step runs on any computer. Install **Node.js** (version 20.6 or newer, the "LTS" download at nodejs.org),
+open a terminal (Command Prompt or PowerShell on Windows, Terminal on Mac) in this folder, and run:
 
 ```
-cd "Code Base"
 npm install
 npm run seed:auth
 ```
 
-This creates a login for everyone with an Account row, using the password `Passport2026!`
-(set `SEED_PASSWORD` to use another). People who already have a login are skipped.
-`.env.local` must sit next to `package.json`. You can also add users by hand under
-Authentication > Users (tick "Auto Confirm User").
+It creates a login for everyone with an Account row and skips people who already have one.
+If you cannot run it, add users by hand in Supabase > Authentication > Users > Add user
+(tick "Auto Confirm User", and use the person's Employee email).
 
-### 4. Deploy the two Edge Functions
+### 4. Deploy the two functions
 
 The Add new hire and Delete buttons need these once:
 
 1. Supabase > **Edge Functions** > **Deploy a new function** > **Via Editor**.
-2. Name it exactly `add-new-hire` and paste `supabase/functions/add-new-hire/index.ts`. Deploy.
+2. Name it exactly `add-new-hire`, paste in `supabase/functions/add-new-hire/index.ts`, and deploy.
 3. Repeat with the name `delete-employee` and `supabase/functions/delete-employee/index.ts`.
 
-Leave "Verify JWT" on. The functions check that the caller is an HR account before doing anything.
-Command-line option: `npx supabase functions deploy add-new-hire --project-ref YOUR_REF`.
+Leave "Verify JWT" on. The functions check that the caller is an HR account.
 
-### 5. Run it
+### 5. Put the website online
 
-```
-npm run dev
-```
+The website builds into one self-contained file, so no GitHub account is needed. On the same computer, in this folder:
 
-Open the address it prints. Sign in with the username from the Account table
-(the part of the email before the @, for example `kengo.yamada`) and the password you set.
+1. Check that `.env.local` has `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (step 2). They are built into the site.
+2. Run `npm run build`. This creates a `dist` folder containing `index.html`.
+3. Upload the `dist` folder to a web host. The simplest is Netlify: sign in to a free account at app.netlify.com,
+   choose **Add new site > Deploy manually** (or go to app.netlify.com/drop) and drag the `dist` folder onto the page.
+   Netlify gives the site a web address, which you can rename in the site settings.
 
-## Deploying the website
+Any other static web host works the same way, including the host of Grace Place's own website: upload `dist/index.html`.
+To update the site later, change the files, run `npm run build` again, and upload the new `dist` folder.
 
-Any static host works. On Vercel, import the repo, set the **root directory** to `Code Base`,
-build command `npm run build`, output folder `dist`. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-as environment variables (type Config is fine). These values are baked in at build time, so redeploy after changing them.
-Pushing to GitHub redeploys automatically.
+To try it on your own computer first, run `npm run dev` and open the address it prints.
+
+Sign in with the username (the part of the work email before the @, for example `kengo.yamada`) and the password.
+A few differ: `tom`, `diane`, `alex`, `ivette`, and Rosie Schulz's is `lauren.schulz`. The full list is in the Account table.
+
+## Before real use
+
+- Delete the 14 fictional sample people (Directory > click a person > Delete, signed in as HR).
+- Hide the sample sign-in buttons (`VITE_SHOW_DEMO_ACCOUNTS=false` in `.env.local`, then build and upload again).
+- Change the shared starting password (set `SEED_PASSWORD` before step 3, or reset passwords in Authentication > Users).
+- Check each person's `AccountType` (Manager or New Hire) in the Account table.
 
 ## Everyday tasks
 
 | To... | Do this |
 |---|---|
-| Add a new hire | Sign in as an HR account > Directory > **Add new hire** |
-| Delete a person | HR account > Directory > click the person > **Delete**. You cannot delete yourself |
+| Add a new hire | Sign in as HR > Directory > **Add new hire** |
+| Delete a person | HR account > Directory > click the person > **Delete** (you cannot delete yourself) |
 | Give someone HR access | Supabase Table Editor > Account > set `IsHR` to TRUE |
 | Make someone a manager or new hire | Table Editor > Account > change `AccountType` |
-| Hide the sample sign-in buttons | Set `VITE_SHOW_DEMO_ACCOUNTS=false` and redeploy |
-| Package the code for handoff | GitHub > Actions > "Package Code Base for Grace Place" > Run workflow. The zip appears under Releases |
-
-## Security notes
-
-- Row-level security (`Grace-Place-Supabase-Security.sql`) enforces who can read and change what.
-  Managers manage tasks. New hires see only their own passport and can only move a task from Not started to In progress.
-- `Account.PasswordHash` is never sent to the browser.
-- The secret `service_role` key lives only in `.env.local` (for the seed script) and inside Supabase (for the Edge Functions).
-  It is never in the website.
-- The sample accounts and the shared `Passport2026!` password are for the demo and first setup.
-  Change the passwords and hide the sample buttons before real use.
 
 ## Troubleshooting sign-in
 
-1. **Authentication > Users** should list a user for each person. If it is empty, run `npm run seed:auth` from `Code Base`.
-2. In the SQL Editor run `select login_email('kengo.yamada');`. It should return that person's email.
-   If the function is missing, run the Security file.
-3. If the site cannot load people after you update, re-run the Security file. It grants read access to the `IsHR` column.
-4. On Vercel, the two `VITE_` variables must be set before the build, then redeploy.
-5. Browser dev tools > Network: a failing `login_email` request points to step 2, a failing `token` request points to step 1.
+1. **Authentication > Users** should list a user for each person. If empty, run step 3.
+2. In the SQL Editor run `select login_email('kengo.yamada');`. It should return that person's email. If not, run the security file.
+3. If the site shows no people after an update, run the security file again.
+4. Both `VITE_` variables must be in `.env.local` before you run `npm run build`. Add them, build again, and upload the new `dist` folder.
 
 ## Scope
 
-Covers the onboarding side only: department task lists through the 30-, 60- and 90-day checkpoints, the printable passport,
-individual logins, meet and greets and committees. It does not cover Grace Place's Orientation process, the required trainings
+Covers the onboarding side only: department task lists through the 30-, 60- and 90-day checkpoints, the printable
+passport, individual logins, meet and greets and committees. It does not cover Orientation, required trainings
 (Zywave, ALICE, Boy Scout), automated reminders, or integration with Paycor, Trakstar or the intranet.
 Task lists for most departments are placeholders until each department confirms its own.
 
-## Team
-
-Team 3, "The Illuminati": Vanessa Gutierrez (lead), Roy Batuman, Aiden Scalf, Cooper Smith.
-Community partner contact: Kengo Yamada, Director of Career and Technical Education, Grace Place.
+Built by Team 3, "The Illuminati" (FGCU, COP 3710): Vanessa Gutierrez, Roy Batuman, Aiden Scalf, Cooper Smith.
