@@ -20,7 +20,8 @@ their own passport, and HR can add or remove people.
 │   ├── Grace-Place-DDL.sql                 creates the 10 tables (wipes existing ones)
 │   ├── Grace-Place-Data.sql                starting data: departments, staff, accounts, tasks
 │   ├── Grace-Place-Supabase-Security.sql   Supabase only: who can read or change what, login lookup
-│   └── Grace-Place-Queries.sql             ten read-only report queries (optional)
+│   ├── Grace-Place-Queries.sql             ten read-only report queries (optional)
+│   └── Grace-Place-Remove-Sample-Data.sql  removes the 14 sample people and all sample tasks
 ├── supabase/functions/
 │   ├── add-new-hire/index.ts               HR: create login + employee + account
 │   └── delete-employee/index.ts            HR: remove a person and everything tied to them
@@ -102,7 +103,7 @@ A few differ: `tom`, `diane`, `alex`, `ivette`, and Rosie Schulz's is `lauren.sc
 
 ## Before real use
 
-- Delete the 14 fictional sample people (Directory > click a person > Delete, signed in as HR).
+- Remove the 14 fictional sample people: run `sql/Grace-Place-Remove-Sample-Data.sql` in the Supabase SQL Editor (do this before step 3, or delete the 14 sample users under Authentication > Users afterward). The same file removes all of the sample tasks, so managers add Grace Place's real tasks afterward. Or delete the people one at a time (Directory > click a person > Delete, signed in as HR).
 - Hide the sample sign-in buttons (`VITE_SHOW_DEMO_ACCOUNTS=false` in `.env.local`, then build and upload again).
 - Change the shared starting password (set `SEED_PASSWORD` before step 3, or reset passwords in Authentication > Users).
 - Check each person's `AccountType` (Manager or New Hire) in the Account table.
