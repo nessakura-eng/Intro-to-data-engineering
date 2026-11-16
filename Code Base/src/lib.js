@@ -1,3 +1,5 @@
+// "Today". Uses the real date. To freeze the sample-data date for a demo, set
+// VITE_DEMO_TODAY=2026-10-19 in the host's environment variables.
 const localToday = () => {
   const d = new Date()
   const pad = (n) => String(n).padStart(2, '0')
@@ -18,7 +20,8 @@ export const DUE_OFFSET = { 'Pre-Orientation': -3, 'First Week': 7, '30-Day': 30
 
 
 export function defaultDue(hireDate, checkpoint) {
-  const d = new Date(hireDate + 'T00:00:00')
+  // Some people have no hire date on file yet; count from today instead of failing.
+  const d = new Date((hireDate ? String(hireDate).slice(0, 10) : NOW) + 'T00:00:00')
   d.setDate(d.getDate() + (DUE_OFFSET[checkpoint] ?? 30))
   return d.toISOString().slice(0, 10)
 }
@@ -34,7 +37,7 @@ export const fmtTime = (t) => {
 }
 export const fmtStamp = (s) => (s ? `${fmtShort(s)}, ${fmtTime(s.slice(11, 16))}` : '')
 export const daysBetween = (a, b) =>
-  Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000)
+  a && b ? Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000) : 0
 
 export function makeSelectors(db) {
   const emp = new Map(db.Employee.map((e) => [e.EmployeeID, e]))
