@@ -20,7 +20,6 @@ their own passport, and HR can add or remove people.
 │   ├── Grace-Place-DDL.sql                 creates the 10 tables (wipes existing ones)
 │   ├── Grace-Place-Data.sql                starting data: departments, staff, accounts, tasks
 │   ├── Grace-Place-Supabase-Security.sql   Supabase only: who can read or change what, login lookup
-│   ├── Grace-Place-Queries.sql             ten read-only report queries (optional)
 │   └── Grace-Place-Remove-Sample-Data.sql  removes the 14 sample people and all sample tasks
 ├── supabase/functions/
 │   ├── add-new-hire/index.ts               HR: create login + employee + account
